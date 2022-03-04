@@ -1,0 +1,20 @@
+version: 0.2
+
+env:
+  parameter-store:
+    DOCKERHUB_PASSWORD: /codebuild/dockerhub/readonly/password
+    DOCKERHUB_USERNAME: /codebuild/dockerhub/readonly/username
+  git-credential-helper: yes
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - mkdir -p "$HOME/bin"
+      - export PATH="$HOME/bin:$PATH"
+      - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+  build:
+    commands:
+      - make docker/run target=lint
+      - make event IS_REVIEW="$FLOW_PULL_REQUEST_ID" IS_BRANCH="$FLOW_BRANCH" IS_TAG="$FLOW_TAG" IS_SCHEDULE="$FLOW_SCHEDULE"

@@ -1,0 +1,15 @@
+# terragrunt
+.terragrunt-cache
+
+# tardigrade-ci
+.tardigrade-ci
+tardigrade-ci/
+
+# terraform file
+.terraform.lock.hcl
+.terraform
+terraform.tfstate
+terraform.tfstate.backup
+
+# python caches
+__pycache__/
