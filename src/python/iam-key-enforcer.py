@@ -14,8 +14,6 @@ Permissions:
     ses:SendEmail
     ses:SendRawEmail
 Environment Variables:
-    ACCOUNT_NAME: AWS Account (friendly) Name
-    ACCOUNT_NUMBER: AWS Account Number
     ARMED: Set to "true" to take action on keys;
             "false" limits to reporting
     LOG_LEVEL: (optional): sets the level for function logging
@@ -23,8 +21,6 @@ Environment Variables:
     EMAIL_ENABLED: used to enable or disable the SES emailed report
     EMAIL_SOURCE: send from address for the email, authorized in SES
     EMAIL_SUBJECT: subject line for the email
-    EMAIL_TARGET: default email address if event fails to pass a valid one
-    EXEMPT_GROUP: IAM Group that is exempt from actions on access keys
     KEY_AGE_DELETE: age at which a key should be deleted (e.g. 120)
     KEY_AGE_INACTIVE: age at which a key should be inactive (e.g. 90)
     KEY_AGE_WARNING: age at which to warn (e.g. 75)
@@ -33,18 +29,27 @@ Environment Variables:
             should be written to S3
     S3_BUCKET: bucket name to write the audit report to if S3_ENABLED is
             set to "true"
+ Event Variables:
+    ACCOUNT_NAME: AWS Account (friendly) Name
+    ACCOUNT_NUMBER: AWS Account Number
+    EMAIL_USER_ENABLED: used to enable or disable the SES emailed report
+    EMAIL_TARGET: default email address if event fails to pass a valid one
+    EXEMPT_GROUPS: IAM Groups that are exempt from actions on access keys
+
 """
 import collections
 import csv
 import io
 import logging
 import os
+import re
 from time import sleep
 import datetime
 import dateutil
+import json
 
 import boto3
-
+from aws_assume_role_lib import assume_role, generate_lambda_session_name
 
 # Standard logging config
 DEFAULT_LOG_LEVEL = logging.INFO
@@ -74,6 +79,22 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
+EMAIL_ENABLED = os.environ.get("EMAIL_ENABLED", "False").lower() == "true"
+EMAIL_SUBJECT = os.environ.get("EMAIL_SUBJECT")
+EMAIL_SOURCE = os.environ.get("EMAIL_SOURCE")
+KEY_AGE_WARNING = int(os.environ.get("KEY_AGE_WARNING", 75))
+KEY_AGE_INACTIVE = int(os.environ.get("KEY_AGE_INACTIVE", 90))
+KEY_AGE_DELETE = int(os.environ.get("KEY_AGE_DELETE", 120))
+KEY_USE_THRESHOLD = int(os.environ.get("KEY_USE_THRESHOLD", 30))
+S3_ENABLED = os.environ.get("S3_ENABLED", "False").lower() == "true"
+S3_BUCKET = os.environ.get("S3_BUCKET", None)
+
+# Get the Lambda session
+SESSION = boto3.Session()
+
+regex = re.compile(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+")
+
 
 def lambda_handler(event, context):  # pylint: disable=unused-argument
     """Audit Access Key Age.
@@ -83,7 +104,25 @@ def lambda_handler(event, context):  # pylint: disable=unused-argument
         - Builds a report of all keys older than KEY_AGE_WARNING
         - Takes action (inactive/delete) on non-compliant Access Keys
     """
-    client_iam = boto3.client("iam")
+    log.debug("Event:\n%s", event)
+
+    # Get the config
+    ROLE_ARN = event["ROLE_ARN"]
+    ROLE_SESSION_NAME = generate_lambda_session_name()  # see below for details
+
+    # Assume the session
+    ASSUMED_ROLE_SESSION = assume_role(
+        SESSION, ROLE_ARN, RoleSessionName=ROLE_SESSION_NAME
+    )
+
+    # do stuff with the Lambda role using SESSION
+    log.debug(SESSION.client("sts").get_caller_identity()["Arn"])
+
+    # do stuff with the assumed role using ASSUMED_ROLE_SESSION
+    log.debug(ASSUMED_ROLE_SESSION.client("sts").get_caller_identity()["Arn"])
+
+    client_iam = ASSUMED_ROLE_SESSION.client("iam")
+    client_ses = SESSION.client("ses")
 
     # Generate Credential Report
     generate_credential_report(client_iam, report_counter=0)
@@ -92,10 +131,10 @@ def lambda_handler(event, context):  # pylint: disable=unused-argument
     report = get_credential_report(client_iam)
 
     # Process Users in Credential Report
-    body = process_users(client_iam, report)
+    body = process_users(client_iam, client_ses, event, report)
 
     # Process message for SES
-    process_message(body)
+    process_message(body, event)
 
 
 def generate_credential_report(client_iam, report_counter, max_attempts=5):
@@ -126,7 +165,9 @@ def get_credential_report(client_iam):
     return list(reader)
 
 
-def process_users(client_iam, report):  # pylint: disable=too-many-branches
+def process_users(
+    client_iam, client_ses, event, report
+):  # pylint: disable=too-many-branches
     """Process each user and key in the Credential Report."""
     # Initialize message content
     html_body = ""
@@ -143,11 +184,12 @@ def process_users(client_iam, report):  # pylint: disable=too-many-branches
             # Test group exemption
             groups = client_iam.list_groups_for_user(UserName=user_name)
             for group in groups["Groups"]:
-                if group["GroupName"] == os.environ["EXEMPT_GROUP"]:
+                if group["GroupName"] in event["EXEMPT_GROUPS"]:
                     exemption = True
                     log.info(
                         "User is exempt via group membership in: %s", group["GroupName"]
                     )
+                    break
 
             # Process Access Keys for user
             access_keys = client_iam.list_access_keys(UserName=user_name)
@@ -160,14 +202,17 @@ def process_users(client_iam, report):  # pylint: disable=too-many-branches
 
                 # last_used_date value will not exist if key not used
                 last_used_date = get_key["AccessKeyLastUsed"].get("LastUsedDate")
+
                 if (
                     not last_used_date
-                    and key_age >= int(os.environ["KEY_USE_THRESHOLD"])
+                    and key_age >= KEY_USE_THRESHOLD
                     and not exemption
                 ):
                     # Key has not been used and has exceeded age threshold
                     # NOT EXEMPT: Delete unused
-                    delete_access_key(access_key_id, user_name, client_iam)
+                    delete_access_key(
+                        access_key_id, user_name, client_iam, client_ses, event
+                    )
                     line = (
                         '<tr bgcolor= "#E6B0AA">'
                         "<td>{}</td>"
@@ -185,12 +230,14 @@ def process_users(client_iam, report):  # pylint: disable=too-many-branches
                     html_body += line
 
                 # Process keys older than warning threshold
-                if key_age < int(os.environ["KEY_AGE_WARNING"]):
+                if key_age < KEY_AGE_WARNING:
                     continue
 
-                if key_age >= int(os.environ["KEY_AGE_DELETE"]) and not exemption:
+                if key_age >= KEY_AGE_DELETE and not exemption:
                     # NOT EXEMPT: Delete
-                    delete_access_key(access_key_id, user_name, client_iam)
+                    delete_access_key(
+                        access_key_id, user_name, client_iam, client_ses, event
+                    )
                     line = (
                         '<tr bgcolor= "#E6B0AA">'
                         "<td>{}</td>"
@@ -205,9 +252,11 @@ def process_users(client_iam, report):  # pylint: disable=too-many-branches
                             str(last_used_date),
                         )
                     )
-                elif key_age >= int(os.environ["KEY_AGE_INACTIVE"]) and not exemption:
+                elif key_age >= KEY_AGE_INACTIVE and not exemption:
                     # NOT EXEMPT: Disable
-                    disable_access_key(access_key_id, user_name, client_iam)
+                    disable_access_key(
+                        access_key_id, user_name, client_iam, client_ses, event
+                    )
                     line = (
                         '<tr bgcolor= "#F4D03F">'
                         "<td>{}</td>"
@@ -241,12 +290,14 @@ def process_users(client_iam, report):  # pylint: disable=too-many-branches
                         )
                     )
                 elif (
-                    key_age >= int(os.environ["KEY_AGE_DELETE"])
+                    key_age >= KEY_AGE_DELETE
                     and exemption
                     and key["Status"] == "Inactive"
                 ):
                     # EXEMPT: Delete if Inactive
-                    delete_access_key(access_key_id, user_name, client_iam)
+                    delete_access_key(
+                        access_key_id, user_name, client_iam, client_ses, event
+                    )
                     line = (
                         '<tr bgcolor= "#E6B0AA">'
                         "<td>{}</td>"
@@ -302,72 +353,70 @@ def process_users(client_iam, report):  # pylint: disable=too-many-branches
 ###############################################################################
 
 
-def delete_access_key(access_key_id, user_name, client):
+def delete_access_key(access_key_id, user_name, client, client_ses, event):
     """Delete Access Key."""
     log.info("Deleting AccessKeyId %s for user %s", access_key_id, user_name)
 
-    if str(os.environ["ARMED"]).lower() == "true":
+    if event["ARMED"]:
         client.delete_access_key(UserName=user_name, AccessKeyId=access_key_id)
+        email_user(access_key_id, user_name, client, client_ses, "deleted", event)
     else:
         log.info("Not armed, no action taken")
 
 
-def disable_access_key(access_key_id, user_name, client):
+def disable_access_key(access_key_id, user_name, client, client_ses, event):
     """Disable Access Key."""
     log.info("Disabling AccessKeyId %s for user %s", access_key_id, user_name)
 
-    if str(os.environ["ARMED"]).lower() == "true":
+    if event["ARMED"]:
         client.update_access_key(
             UserName=user_name, AccessKeyId=access_key_id, Status="Inactive"
         )
+        email_user(access_key_id, user_name, client, client_ses, "disabled", event)
     else:
         log.info("Not armed, no action taken")
 
 
-def process_message(html_body):
-    """Generate HTML and send to SES."""
-    html_header = (
-        "<html><h1>Expiring Access Key Report for {} - {} </h1>"
-        "<p>The following access keys are over {} days old "
-        "and will soon be marked inactive ({} days) and deleted ({} days).</p>"
-        "<p>Grayed out rows are exempt via membership in IAM Group: {}</p>"
-        "<table>"
-        "<tr><td><b>IAM User Name</b></td>"
-        "<td><b>Access Key ID</b></td>"
-        "<td><b>Key Age</b></td>"
-        "<td><b>Key Status</b></td>"
-        "<td><b>Last Used</b></td></tr>".format(
-            os.environ["ACCOUNT_NUMBER"],
-            os.environ["ACCOUNT_NAME"],
-            os.environ["KEY_AGE_WARNING"],
-            os.environ["KEY_AGE_INACTIVE"],
-            os.environ["KEY_AGE_DELETE"],
-            os.environ["EXEMPT_GROUP"],
+def email_user(access_key_id, user_name, client, client_ses, action, event):
+    """Email user with the action taken on their key"""
+    if event["EMAIL_USER_ENABLED"]:
+        tags = client.list_user_tags(UserName=user_name)
+
+        email = ""
+        for tag in tags["Tags"]:
+            if tag["Key"].toLower() == "email":
+                email = tag["Value"]
+
+        email_targets = [email["EMAIL_TARGET"], ADMIN_EMAIL]
+        if is_valid(email):
+            email_targets.append(email)
+        if action == "disabled":
+            subject = "IAM User Key Disabled for {}".format(user_name)
+            key_age = KEY_AGE_INACTIVE
+        else:
+            subject = "IAM User Key Deleted for {}".format(user_name)
+            key_age = KEY_AGE_DELETE
+
+        html = (
+            "<html><h1>Expiring Access Key Report for {} </h1>"
+            "<p>The following access key {} is over {} days old "
+            "and has been {}.</p>"
+            "<table>"
+            "<tr><td><b>IAM User Name</b></td>"
+            "<td><b>Access Key ID</b></td>"
+            "<td><b>Key Age</b></td>"
+            "<td><b>Key Status</b></td>"
+            "<td><b>Last Used</b></td></tr></table></html>".format(
+                user_name,
+                access_key_id,
+                key_age,
+                action,
+            )
         )
-    )
-
-    html_footer = "</table></html>"
-    html = html_header + html_body + html_footer
-    log.info("%s", html)
-
-    # Optionally write the report to S3
-    if str(os.environ["S3_ENABLED"]).lower() == "true":
-        client_s3 = boto3.client("s3")
-        s3_key = "access_key_audit_report_" + str(datetime.date.today()) + ".html"
-        response = client_s3.put_object(
-            Bucket=os.environ["S3_BUCKET"], Key=s3_key, Body=html
-        )
-    else:
-        log.info("S3 report not enabled per environment variable setting")
-
-    # Optionally send report via SES Email
-    if str(os.environ["EMAIL_ENABLED"]).lower() == "true":
-        # Establish SES Client
-        client_ses = boto3.client("ses")
 
         # Construct and Send Email
         response = client_ses.send_email(
-            Destination={"ToAddresses": [os.environ["EMAIL_TARGET"]]},
+            Destination={"ToAddresses": email_targets},
             Message={
                 "Body": {
                     "Html": {
@@ -377,14 +426,89 @@ def process_message(html_body):
                 },
                 "Subject": {
                     "Charset": "UTF-8",
-                    "Data": os.environ["EMAIL_SUBJECT"],
+                    "Data": subject,
                 },
             },
-            Source=os.environ["EMAIL_SOURCE"],
+            Source=EMAIL_SOURCE,
         )
         log.info("Success. Message ID: %s", response["MessageId"])
     else:
         log.info("Email not enabled per environment variable setting")
+
+
+def is_valid(email):
+    if re.fullmatch(regex, email):
+        return True
+    return False
+
+
+def process_message(html_body, event):
+    """Generate HTML and send to SES."""
+    html_header = (
+        "<html><h1>Expiring Access Key Report for {} - {} </h1>"
+        "<p>The following access keys are over {} days old "
+        "and will soon be marked inactive ({} days) and deleted ({} days).</p>"
+        "<p>Grayed out rows are exempt via membership in an IAM Group(s): {}</p>"
+        "<table>"
+        "<tr><td><b>IAM User Name</b></td>"
+        "<td><b>Access Key ID</b></td>"
+        "<td><b>Key Age</b></td>"
+        "<td><b>Key Status</b></td>"
+        "<td><b>Last Used</b></td></tr>".format(
+            event["ACCOUNT_NUMBER"],
+            event["ACCOUNT_NAME"],
+            KEY_AGE_WARNING,
+            KEY_AGE_INACTIVE,
+            KEY_AGE_DELETE,
+            ", ".join(event["EXEMPT_GROUPS"]),
+        )
+    )
+
+    html_footer = "</table></html>"
+    html = html_header + html_body + html_footer
+    log.info("%s", html)
+
+    # Optionally write the report to S3
+    if S3_ENABLED:
+        client_s3 = SESSION.client("s3")
+        s3_key = (
+            event["ACCOUNT_NUMBER"]
+            + "/access_key_audit_report_"
+            + str(datetime.date.today())
+            + ".html"
+        )
+        response = client_s3.put_object(Bucket=S3_BUCKET, Key=s3_key, Body=html)
+    else:
+        log.info("S3 report not enabled per setting")
+
+    # Optionally send report via SES Email
+    if EMAIL_ENABLED:
+        # Establish SES Client
+        client_ses = SESSION.client("ses")
+
+        to_addresses = event["EMAIL_TARGET"]
+        to_addresses.append(ADMIN_EMAIL)
+
+        # Construct and Send Email
+        response = client_ses.send_email(
+            Destination={"ToAddresses": to_addresses},
+            Message={
+                "Body": {
+                    "Html": {
+                        "Charset": "UTF-8",
+                        "Data": html,
+                    }
+                },
+                "Subject": {
+                    "Charset": "UTF-8",
+                    "Data": EMAIL_SUBJECT,
+                },
+            },
+            Source=EMAIL_SOURCE,
+        )
+        log.info("Success. Message ID: %s", response["MessageId"])
+    else:
+        log.info("Email not enabled per setting")
 
 
 def object_age(last_changed):
