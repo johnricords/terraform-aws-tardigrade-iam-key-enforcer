@@ -89,6 +89,7 @@ KEY_AGE_DELETE = int(os.environ.get("KEY_AGE_DELETE", 120))
 KEY_USE_THRESHOLD = int(os.environ.get("KEY_USE_THRESHOLD", 30))
 S3_ENABLED = os.environ.get("S3_ENABLED", "False").lower() == "true"
 S3_BUCKET = os.environ.get("S3_BUCKET", None)
+EMAIL_TAG = os.environ.get("EMAIL_TAG", "keyenforcer:email").toLower()
 
 # Get the Lambda session
 SESSION = boto3.Session()
@@ -386,7 +387,7 @@ def email_user(access_key_id, user_name, client, client_ses, action, event):
 
         email = ""
         for tag in tags["Tags"]:
-            if tag["Key"].toLower() == "email":
+            if tag["Key"].toLower() == EMAIL_TAG:
                 email = tag["Value"]
 
         email_targets = [event["EMAIL_TARGET"], ADMIN_EMAIL]

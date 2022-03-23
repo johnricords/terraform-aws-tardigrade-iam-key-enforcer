@@ -42,6 +42,12 @@ variable "email_source" {
   type        = string
 }
 
+variable "email_tag" {
+  description = "Tag to be placed on the IAM user that we can use to notify when their key is going to be disabled/deleted"
+  type        = string
+  default     = "keyenforcer:email"
+}
+
 variable "admin_email" {
   description = "Admin Email that will receive all emails and reports about actions taken if email is enabled"
   type        = string

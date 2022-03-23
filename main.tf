@@ -55,6 +55,7 @@ module "lambda" {
     KEY_USE_THRESHOLD = var.key_use_threshold
     S3_ENABLED        = var.s3_enabled
     S3_BUCKET         = var.s3_bucket
+    EMAIL_TAG         = var.email_tag
   }
 
   source_path = [
