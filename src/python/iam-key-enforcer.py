@@ -392,6 +392,13 @@ def email_user(access_key_id, user_name, client, client_ses, action, event):
         email_targets = [event["EMAIL_TARGET"], ADMIN_EMAIL]
         if is_valid_email(email):
             email_targets.append(email)
+        else:
+            log.error(
+                "Invalid email found for user: %s, email: %s",
+                user_name,
+                email,
+            )
+
         if action == "disabled":
             subject = "IAM User Key Disabled for {}".format(user_name)
             key_age = KEY_AGE_INACTIVE
