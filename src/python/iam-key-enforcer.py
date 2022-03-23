@@ -389,7 +389,7 @@ def email_user(access_key_id, user_name, client, client_ses, action, event):
             if tag["Key"].toLower() == "email":
                 email = tag["Value"]
 
-        email_targets = [email["EMAIL_TARGET"], ADMIN_EMAIL]
+        email_targets = [event["EMAIL_TARGET"], ADMIN_EMAIL]
         if is_valid_email(email):
             email_targets.append(email)
         if action == "disabled":
