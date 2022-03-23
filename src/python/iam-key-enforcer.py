@@ -439,9 +439,7 @@ def email_user(access_key_id, user_name, client, client_ses, action, event):
 
 
 def is_valid_email(email):
-    if re.fullmatch(email_regex, email):
-        return True
-    return False
+    return re.fullmatch(email_regex, email)
 
 
 def process_message(html_body, event):
