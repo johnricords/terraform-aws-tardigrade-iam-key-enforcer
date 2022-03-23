@@ -93,7 +93,9 @@ S3_BUCKET = os.environ.get("S3_BUCKET", None)
 # Get the Lambda session
 SESSION = boto3.Session()
 
-regex = re.compile(r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+")
+email_regex = re.compile(
+    r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+"
+)
 
 
 def lambda_handler(event, context):  # pylint: disable=unused-argument
@@ -388,7 +390,7 @@ def email_user(access_key_id, user_name, client, client_ses, action, event):
                 email = tag["Value"]
 
         email_targets = [email["EMAIL_TARGET"], ADMIN_EMAIL]
-        if is_valid(email):
+        if is_valid_email(email):
             email_targets.append(email)
         if action == "disabled":
             subject = "IAM User Key Disabled for {}".format(user_name)
@@ -436,8 +438,8 @@ def email_user(access_key_id, user_name, client, client_ses, action, event):
         log.info("Email not enabled per environment variable setting")
 
 
-def is_valid(email):
-    if re.fullmatch(regex, email):
+def is_valid_email(email):
+    if re.fullmatch(email_regex, email):
         return True
     return False
 
