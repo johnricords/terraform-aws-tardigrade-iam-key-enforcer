@@ -165,8 +165,7 @@ def get_credential_report(client_iam):
     """Process IAM Credential Report."""
     credential_report = client_iam.get_credential_report()
     credential_report_csv = io.StringIO(credential_report["Content"].decode("utf-8"))
-    reader = csv.DictReader(credential_report_csv)
-    return list(reader)
+    return list(csv.DictReader(credential_report_csv))
 
 
 def process_users(
