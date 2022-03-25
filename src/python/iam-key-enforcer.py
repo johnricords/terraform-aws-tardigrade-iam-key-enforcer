@@ -175,10 +175,10 @@ def process_users(
     """Process each user and key in the Credential Report."""
     # Initialize message content
     html_body = ""
-    line = ""
 
     # Access the credential report and process it
     for row in report:
+        line = ""
         # A row is a unique IAM user
         user_name = row["user"]
         log.debug("Processing user: %s", user_name)
