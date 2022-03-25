@@ -82,15 +82,59 @@ resource "aws_s3_bucket_public_access_block" "this" {
   restrict_public_buckets = true
 }
 
-##################### End Test Resources ###############
 
-module "iam_key_enforcer" {
-  source = "../"
 
-  project_name = local.project
+##############################
+# SQS Queue Policy
+##############################
+resource "aws_sqs_queue_policy" "this" {
+  queue_url = aws_sqs_queue.this.id
 
-  policy_assume_role_arn = "arn:aws:iam::*:role/${local.project}-iam-key-enforcer-role"
+  policy = jsonencode(
+    {
+      Version = "2012-10-17",
+      Id      = "sqspolicy",
+      Statement : [
+        {
+          Sid       = "AllowSend",
+          Effect    = "Allow",
+          Principal = "*",
+          Action    = "sqs:SendMessage",
+          Resource  = aws_sqs_queue.this.arn,
+          Condition = {
+            "ArnEquals" : {
+              "aws:SourceArn" : "arn:${data.aws_partition.current.partition}:events:*:*:rule/${local.project}*"
+            }
+          }
+        },
+        {
+          Sid    = "AllowRead",
+          Effect = "Allow",
+          "Principal" : {
+            "AWS" : [
+              data.aws_caller_identity.current.account_id
+            ]
+          },
+          Action   = "sqs:ReceiveMessage",
+          Resource = aws_sqs_queue.this.arn,
+        }
+      ]
+    }
+  )
+}
 
+##############################
+# SQS Queue
+##############################
+resource "aws_sqs_queue" "this" {
+  name                       = "${local.project}-iam-key-enforcer-dlq"
+  message_retention_seconds  = 1209600
+  receive_wait_time_seconds  = 20
+  visibility_timeout_seconds = 30
+  tags                       = local.tags
+}
+
+locals {
   accounts = [
     {
       account_name       = var.account_name
@@ -102,6 +146,46 @@ module "iam_key_enforcer" {
       exempt_groups      = var.exempt_groups
     }
   ]
+}
+
+##############################
+# Schedule Event for testing
+##############################
+module "scheduled_events" {
+  source = "../modules/scheduled_event"
+
+  for_each = { for account in local.accounts : account.account_number => account }
+
+  event_name             = "${local.project}-${each.value.account_name}"
+  event_rule_description = "Scheduled Event that runs IAM Key Enforcer Lambda for account ${each.value.account_number} - ${each.value.account_name}"
+  lambda_arn             = module.iam_key_enforcer.lambda.lambda_function_arn
+  lambda_name            = module.iam_key_enforcer.lambda.lambda_function_name
+  schedule_expression    = var.schedule_expression
+  input_transformer = {
+    input_template = jsonencode({
+      "account_number" : each.value.account_number,
+      "account_name" : each.value.account_name,
+      "role_arn" : each.value.role_arn,
+      "armed" : each.value.armed,
+      "email_target" : each.value.email_target,
+      "exempt_groups" : each.value.exempt_groups,
+      "email_user_enabled" : each.value.email_user_enabled,
+    })
+  }
+  tags = local.tags
+  dead_letter_config = {
+    arn = aws_sqs_queue.this.arn
+  }
+}
+
+##################### End Test Resources ###############
+
+module "iam_key_enforcer" {
+  source = "../"
+
+  project_name = local.project
+
+  policy_assume_role_arn = "arn:aws:iam::*:role/${local.project}-iam-key-enforcer-role"
 
   log_level         = "DEBUG"
   email_enabled     = true
@@ -116,11 +200,9 @@ module "iam_key_enforcer" {
   s3_bucket         = aws_s3_bucket.this.id
   s3_bucket_arn     = aws_s3_bucket.this.arn
 
-  sqs_queue_name = "${local.project}-iam-key-enforcer-dlq"
-
-  schedule_expression = var.schedule_expression
-  tags                = local.tags
+  tags = local.tags
 }
+
 
 data "terraform_remote_state" "prereq" {
   backend = "local"

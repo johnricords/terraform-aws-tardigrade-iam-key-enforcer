@@ -14,19 +14,6 @@ variable "policy_assume_role_arn" {
   type        = string
 }
 
-variable "accounts" {
-  description = "List of accounts to create scheduled events for"
-  type = list(object({
-    account_name       = string
-    account_number     = string
-    role_arn           = string
-    armed              = bool
-    email_user_enabled = bool
-    email_target       = list(string)
-    exempt_groups      = list(string)
-  }))
-}
-
 variable "email_enabled" {
   description = "Used to enable or disable the SES emailed report"
   type        = bool
@@ -50,11 +37,6 @@ variable "email_tag" {
 
 variable "admin_email" {
   description = "Admin Email that will receive all emails and reports about actions taken if email is enabled"
-  type        = string
-}
-
-variable "schedule_expression" {
-  description = "Schedule Expressions for Rules"
   type        = string
 }
 
@@ -91,23 +73,6 @@ variable "s3_bucket" {
 variable "s3_bucket_arn" {
   description = "Bucket arn to write the audit report to if s3_enabled is set to 'true'"
   type        = string
-}
-
-variable "sqs_queue_name" {
-  description = "Resource name for the SQS Queue"
-  type        = string
-}
-
-variable "message_retention_seconds" {
-  description = "Max message retention in seconds (default is 14 days)"
-  type        = number
-  default     = 1209600
-}
-
-variable "visibility_timeout_seconds" {
-  description = "The visibility timeout for the queue. An integer from 0 to 43200 (12 hours). The default for this attribute is 30."
-  type        = number
-  default     = 30
 }
 
 variable "log_level" {
