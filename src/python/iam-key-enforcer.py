@@ -183,170 +183,164 @@ def process_users(
         user_name = row["user"]
         log.debug("Processing user: %s", user_name)
         exemption = False
-        if user_name != "<root_account>":
 
-            # Test group exemption
-            groups = client_iam.list_groups_for_user(UserName=user_name)
-            for group in groups["Groups"]:
-                if group["GroupName"] in event["EXEMPT_GROUPS"]:
-                    exemption = True
-                    log.info(
-                        "User is exempt via group membership in: %s", group["GroupName"]
-                    )
-                    break
+        if user_name == "<root_account>":
+            continue
 
-            # Process Access Keys for user
-            access_keys = client_iam.list_access_keys(UserName=user_name)
-            for key in access_keys["AccessKeyMetadata"]:
-                key_age = object_age(key["CreateDate"])
-                access_key_id = key["AccessKeyId"]
+        # Test group exemption
+        groups = client_iam.list_groups_for_user(UserName=user_name)
+        for group in groups["Groups"]:
+            if group["GroupName"] in event["EXEMPT_GROUPS"]:
+                exemption = True
+                log.info(
+                    "User is exempt via group membership in: %s", group["GroupName"]
+                )
+                break
 
-                # get time of last key use
-                get_key = client_iam.get_access_key_last_used(AccessKeyId=access_key_id)
+        # Process Access Keys for user
+        access_keys = client_iam.list_access_keys(UserName=user_name)
+        for key in access_keys["AccessKeyMetadata"]:
+            key_age = object_age(key["CreateDate"])
+            access_key_id = key["AccessKeyId"]
 
-                # last_used_date value will not exist if key not used
-                last_used_date = get_key["AccessKeyLastUsed"].get("LastUsedDate")
+            # get time of last key use
+            get_key = client_iam.get_access_key_last_used(AccessKeyId=access_key_id)
 
-                if (
-                    not last_used_date
-                    and key_age >= KEY_USE_THRESHOLD
-                    and not exemption
-                ):
-                    # Key has not been used and has exceeded age threshold
-                    # NOT EXEMPT: Delete unused
-                    delete_access_key(
-                        access_key_id, user_name, client_iam, client_ses, event
-                    )
-                    line = (
-                        '<tr bgcolor= "#E6B0AA">'
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>DELETED</td>"
-                        "<td>{}</td>"
-                        "</tr>".format(
-                            user_name,
-                            key["AccessKeyId"],
-                            str(key_age),
-                            str(last_used_date),
-                        )
-                    )
-                    html_body += line
+            # last_used_date value will not exist if key not used
+            last_used_date = get_key["AccessKeyLastUsed"].get("LastUsedDate")
 
-                # Process keys older than warning threshold
-                if key_age < KEY_AGE_WARNING:
-                    continue
-
-                if key_age >= KEY_AGE_DELETE and not exemption:
-                    # NOT EXEMPT: Delete
-                    delete_access_key(
-                        access_key_id, user_name, client_iam, client_ses, event
+            if not last_used_date and key_age >= KEY_USE_THRESHOLD and not exemption:
+                # Key has not been used and has exceeded age threshold
+                # NOT EXEMPT: Delete unused
+                delete_access_key(
+                    access_key_id, user_name, client_iam, client_ses, event
+                )
+                line = (
+                    '<tr bgcolor= "#E6B0AA">'
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>DELETED</td>"
+                    "<td>{}</td>"
+                    "</tr>".format(
+                        user_name,
+                        key["AccessKeyId"],
+                        str(key_age),
+                        str(last_used_date),
                     )
-                    line = (
-                        '<tr bgcolor= "#E6B0AA">'
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>DELETED</td>"
-                        "<td>{}</td>"
-                        "</tr>".format(
-                            user_name,
-                            key["AccessKeyId"],
-                            str(key_age),
-                            str(last_used_date),
-                        )
-                    )
-                elif key_age >= KEY_AGE_INACTIVE and not exemption:
-                    # NOT EXEMPT: Disable
-                    disable_access_key(
-                        access_key_id, user_name, client_iam, client_ses, event
-                    )
-                    line = (
-                        '<tr bgcolor= "#F4D03F">'
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "</tr>".format(
-                            user_name,
-                            key["AccessKeyId"],
-                            str(key_age),
-                            key["Status"],
-                            str(last_used_date),
-                        )
-                    )
-                elif not exemption:
-                    # NOT EXEMPT: Report
-                    line = (
-                        '<tr bgcolor= "#FFFFFF">'
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "</tr>".format(
-                            user_name,
-                            key["AccessKeyId"],
-                            str(key_age),
-                            key["Status"],
-                            str(last_used_date),
-                        )
-                    )
-                elif (
-                    key_age >= KEY_AGE_DELETE
-                    and exemption
-                    and key["Status"] == "Inactive"
-                ):
-                    # EXEMPT: Delete if Inactive
-                    delete_access_key(
-                        access_key_id, user_name, client_iam, client_ses, event
-                    )
-                    line = (
-                        '<tr bgcolor= "#E6B0AA">'
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>DELETED</td>"
-                        "<td>{}</td>"
-                        "</tr>".format(
-                            user_name,
-                            key["AccessKeyId"],
-                            str(key_age),
-                            str(last_used_date),
-                        )
-                    )
-                elif exemption:
-                    # EXEMPT: Report
-                    line = (
-                        '<tr bgcolor= "#D7DBDD">'
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "<td>{}</td>"
-                        "</tr>".format(
-                            user_name,
-                            key["AccessKeyId"],
-                            str(key_age),
-                            key["Status"],
-                            str(last_used_date),
-                        )
-                    )
-                else:
-                    raise Exception(
-                        f"Unhandled case for Access Key {key['AccessKeyId']}"
-                    )
+                )
                 html_body += line
 
-                # Log it
-                log.info(
-                    "%s \t %s \t %s \t %s",
-                    user_name,
-                    key["AccessKeyId"],
-                    str(key_age),
-                    key["Status"],
+            # Process keys older than warning threshold
+            if key_age < KEY_AGE_WARNING:
+                continue
+
+            if key_age >= KEY_AGE_DELETE and not exemption:
+                # NOT EXEMPT: Delete
+                delete_access_key(
+                    access_key_id, user_name, client_iam, client_ses, event
                 )
+                line = (
+                    '<tr bgcolor= "#E6B0AA">'
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>DELETED</td>"
+                    "<td>{}</td>"
+                    "</tr>".format(
+                        user_name,
+                        key["AccessKeyId"],
+                        str(key_age),
+                        str(last_used_date),
+                    )
+                )
+            elif key_age >= KEY_AGE_INACTIVE and not exemption:
+                # NOT EXEMPT: Disable
+                disable_access_key(
+                    access_key_id, user_name, client_iam, client_ses, event
+                )
+                line = (
+                    '<tr bgcolor= "#F4D03F">'
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "</tr>".format(
+                        user_name,
+                        key["AccessKeyId"],
+                        str(key_age),
+                        key["Status"],
+                        str(last_used_date),
+                    )
+                )
+            elif not exemption:
+                # NOT EXEMPT: Report
+                line = (
+                    '<tr bgcolor= "#FFFFFF">'
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "</tr>".format(
+                        user_name,
+                        key["AccessKeyId"],
+                        str(key_age),
+                        key["Status"],
+                        str(last_used_date),
+                    )
+                )
+            elif (
+                key_age >= KEY_AGE_DELETE and exemption and key["Status"] == "Inactive"
+            ):
+                # EXEMPT: Delete if Inactive
+                delete_access_key(
+                    access_key_id, user_name, client_iam, client_ses, event
+                )
+                line = (
+                    '<tr bgcolor= "#E6B0AA">'
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>DELETED</td>"
+                    "<td>{}</td>"
+                    "</tr>".format(
+                        user_name,
+                        key["AccessKeyId"],
+                        str(key_age),
+                        str(last_used_date),
+                    )
+                )
+            elif exemption:
+                # EXEMPT: Report
+                line = (
+                    '<tr bgcolor= "#D7DBDD">'
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "<td>{}</td>"
+                    "</tr>".format(
+                        user_name,
+                        key["AccessKeyId"],
+                        str(key_age),
+                        key["Status"],
+                        str(last_used_date),
+                    )
+                )
+            else:
+                raise Exception(f"Unhandled case for Access Key {key['AccessKeyId']}")
+            html_body += line
+
+            # Log it
+            log.info(
+                "%s \t %s \t %s \t %s",
+                user_name,
+                key["AccessKeyId"],
+                str(key_age),
+                key["Status"],
+            )
     if str(html_body) == "":
         html_body = "All Access Keys for this account are compliant."
     return html_body
