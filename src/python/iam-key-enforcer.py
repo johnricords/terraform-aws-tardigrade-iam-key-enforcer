@@ -14,8 +14,6 @@ Permissions:
     ses:SendEmail
     ses:SendRawEmail
 Environment Variables:
-    ARMED: Set to "true" to take action on keys;
-            "false" limits to reporting
     LOG_LEVEL: (optional): sets the level for function logging
             valid input: critical, error, warning, info (default), debug
     EMAIL_ENABLED: used to enable or disable the SES emailed report
@@ -30,11 +28,14 @@ Environment Variables:
     S3_BUCKET: bucket name to write the audit report to if S3_ENABLED is
             set to "true"
  Event Variables:
-    ACCOUNT_NAME: AWS Account (friendly) Name
-    ACCOUNT_NUMBER: AWS Account Number
-    EMAIL_USER_ENABLED: used to enable or disable the SES emailed report
-    EMAIL_TARGET: default email address if event fails to pass a valid one
-    EXEMPT_GROUPS: IAM Groups that are exempt from actions on access keys
+    armed: Set to "true" to take action on keys;
+            "false" limits to reporting
+    role_arn: Arn of role to assume
+    account_name: AWS Account (friendly) Name
+    account_number: AWS Account Number
+    email_user_enabled: used to enable or disable the SES emailed report
+    email_target: default email address if event fails to pass a valid one
+    exempt_groups: IAM Groups that are exempt from actions on access keys
 
 """
 import collections
@@ -110,21 +111,21 @@ def lambda_handler(event, context):  # pylint: disable=unused-argument
     log.debug("Event:\n%s", event)
 
     # Get the config
-    ROLE_ARN = event["ROLE_ARN"]
-    ROLE_SESSION_NAME = generate_lambda_session_name()  # see below for details
+    role_arn = event["role_arn"]
+    role_session_name = generate_lambda_session_name()  # see below for details
 
     # Assume the session
-    ASSUMED_ROLE_SESSION = assume_role(
-        SESSION, ROLE_ARN, RoleSessionName=ROLE_SESSION_NAME
+    assumed_role_session = assume_role(
+        SESSION, role_arn, RoleSessionName=role_session_name
     )
 
     # do stuff with the Lambda role using SESSION
     log.debug(SESSION.client("sts").get_caller_identity()["Arn"])
 
-    # do stuff with the assumed role using ASSUMED_ROLE_SESSION
-    log.debug(ASSUMED_ROLE_SESSION.client("sts").get_caller_identity()["Arn"])
+    # do stuff with the assumed role using assumed_role_session
+    log.debug(assumed_role_session.client("sts").get_caller_identity()["Arn"])
 
-    client_iam = ASSUMED_ROLE_SESSION.client("iam")
+    client_iam = assumed_role_session.client("iam")
     client_ses = SESSION.client("ses")
 
     # Generate Credential Report
@@ -189,7 +190,7 @@ def process_users(
         # Test group exemption
         groups = client_iam.list_groups_for_user(UserName=user_name)
         for group in groups["Groups"]:
-            if group["GroupName"] in event["EXEMPT_GROUPS"]:
+            if group["GroupName"] in event["exempt_groups"]:
                 exemption = True
                 log.info(
                     "User is exempt via group membership in: %s", group["GroupName"]
@@ -354,7 +355,7 @@ def delete_access_key(access_key_id, user_name, client, client_ses, event):
     """Delete Access Key."""
     log.info("Deleting AccessKeyId %s for user %s", access_key_id, user_name)
 
-    if event["ARMED"]:
+    if event["armed"]:
         client.delete_access_key(UserName=user_name, AccessKeyId=access_key_id)
         email_user(access_key_id, user_name, client, client_ses, "deleted", event)
     else:
@@ -365,7 +366,7 @@ def disable_access_key(access_key_id, user_name, client, client_ses, event):
     """Disable Access Key."""
     log.info("Disabling AccessKeyId %s for user %s", access_key_id, user_name)
 
-    if event["ARMED"]:
+    if event["armed"]:
         client.update_access_key(
             UserName=user_name, AccessKeyId=access_key_id, Status="Inactive"
         )
@@ -376,7 +377,7 @@ def disable_access_key(access_key_id, user_name, client, client_ses, event):
 
 def email_user(access_key_id, user_name, client, client_ses, action, event):
     """Email user with the action taken on their key"""
-    if event["EMAIL_USER_ENABLED"]:
+    if event["email_user_enabled"]:
         tags = client.list_user_tags(UserName=user_name)
 
         email = ""
@@ -384,7 +385,7 @@ def email_user(access_key_id, user_name, client, client_ses, action, event):
             if tag["Key"].toLower() == EMAIL_TAG:
                 email = tag["Value"]
 
-        email_targets = [event["EMAIL_TARGET"], ADMIN_EMAIL]
+        email_targets = [event["email_target"], ADMIN_EMAIL]
         if is_valid_email(email):
             email_targets.append(email)
         else:
@@ -457,12 +458,12 @@ def process_message(html_body, event):
         "<td><b>Key Age</b></td>"
         "<td><b>Key Status</b></td>"
         "<td><b>Last Used</b></td></tr>".format(
-            event["ACCOUNT_NUMBER"],
-            event["ACCOUNT_NAME"],
+            event["account_number"],
+            event["account_name"],
             KEY_AGE_WARNING,
             KEY_AGE_INACTIVE,
             KEY_AGE_DELETE,
-            ", ".join(event["EXEMPT_GROUPS"]),
+            ", ".join(event["exempt_groups"]),
         )
     )
 
@@ -474,7 +475,7 @@ def process_message(html_body, event):
     if S3_ENABLED:
         client_s3 = SESSION.client("s3")
         s3_key = (
-            event["ACCOUNT_NUMBER"]
+            event["account_number"]
             + "/access_key_audit_report_"
             + str(datetime.date.today())
             + ".html"
@@ -488,7 +489,7 @@ def process_message(html_body, event):
         # Establish SES Client
         client_ses = SESSION.client("ses")
 
-        to_addresses = event["EMAIL_TARGET"]
+        to_addresses = event["email_target"]
         to_addresses.append(ADMIN_EMAIL)
 
         # Construct and Send Email

@@ -132,13 +132,13 @@ module "scheduled_events" {
   schedule_expression    = var.schedule_expression
   input_transformer = {
     input_template = jsonencode({
-      "ACCOUNT_NUMBER" : each.value.account_number,
-      "ACCOUNT_NAME" : each.value.account_name,
-      "ROLE_ARN" : each.value.role_arn,
-      "ARMED" : each.value.armed,
-      "EMAIL_TARGET" : each.value.email_target,
-      "EXEMPT_GROUPS" : each.value.exempt_groups,
-      "EMAIL_USER_ENABLED" : each.value.email_user_enabled,
+      "account_number" : each.value.account_number,
+      "account_name" : each.value.account_name,
+      "role_arn" : each.value.role_arn,
+      "armed" : each.value.armed,
+      "email_target" : each.value.email_target,
+      "exempt_groups" : each.value.exempt_groups,
+      "email_user_enabled" : each.value.email_user_enabled,
     })
   }
   tags = var.tags
