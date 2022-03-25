@@ -156,8 +156,9 @@ def generate_credential_report(client_iam, report_counter, max_attempts=5):
         sleep(10)
         return generate_credential_report(client_iam, report_counter)
 
-    log.info("Credential report generation throttled - exit")
-    return exit
+    throttle_error = "Credential report generation throttled - exit"
+    log.error(throttle_error)
+    raise Exception(throttle_error)
 
 
 def get_credential_report(client_iam):
