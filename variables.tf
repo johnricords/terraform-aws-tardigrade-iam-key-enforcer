@@ -65,11 +65,13 @@ variable "key_use_threshold" {
 variable "s3_enabled" {
   description = "Set to 'true' and provide s3_bucket if the audit report should be written to S3"
   type        = bool
+  default     = false
 }
 
 variable "s3_bucket" {
   description = "Bucket name to write the audit report to if s3_enabled is set to 'true'"
   type        = string
+  default     = null
 }
 
 variable "s3_bucket_arn" {
