@@ -92,4 +92,5 @@ variable "log_level" {
 variable "tags" {
   description = "Tags for resource"
   type        = map(string)
+  default     = {}
 }
