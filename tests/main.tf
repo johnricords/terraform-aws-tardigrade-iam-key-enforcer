@@ -198,7 +198,6 @@ module "iam_key_enforcer" {
   key_use_threshold          = var.key_use_threshold
   s3_enabled                 = var.s3_enabled
   s3_bucket                  = aws_s3_bucket.this.id
-  s3_bucket_arn              = aws_s3_bucket.this.arn
 
   tags = local.tags
 }
