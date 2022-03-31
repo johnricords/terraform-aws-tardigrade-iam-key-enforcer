@@ -6,7 +6,7 @@ data "aws_iam_policy_document" "lambda" {
       "s3:PutObjectTagging",
       "s3:PutObjectVersionTagging",
     ]
-    resources = ["${var.s3_bucket_arn}/*"]
+    resources = ["arn:aws:s3:::${var.s3_bucket}/*"]
   }
   statement {
     actions = [

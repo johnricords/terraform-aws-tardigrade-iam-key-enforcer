@@ -74,11 +74,6 @@ variable "s3_bucket" {
   default     = null
 }
 
-variable "s3_bucket_arn" {
-  description = "Bucket arn to write the audit report to if s3_enabled is set to 'true'"
-  type        = string
-}
-
 variable "log_level" {
   description = "Log level for lambda"
   type        = string
