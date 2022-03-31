@@ -1,7 +1,3 @@
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
-data "aws_partition" "current" {}
-
 data "aws_iam_policy_document" "lambda" {
   statement {
     sid = "AllowS3Object"
@@ -44,18 +40,18 @@ module "lambda" {
   timeout             = 300
   tags                = var.tags
   environment_variables = {
-    LOG_LEVEL         = var.log_level
-    EMAIL_ENABLED     = var.email_enabled
-    EMAIL_SUBJECT     = var.email_subject
-    EMAIL_SOURCE      = var.email_source
-    ADMIN_EMAIL       = var.admin_email
-    KEY_AGE_WARNING   = var.key_age_warning
-    KEY_AGE_INACTIVE  = var.key_age_inactive
-    KEY_AGE_DELETE    = var.key_age_delete
-    KEY_USE_THRESHOLD = var.key_use_threshold
-    S3_ENABLED        = var.s3_enabled
-    S3_BUCKET         = var.s3_bucket
-    EMAIL_TAG         = var.email_tag
+    LOG_LEVEL                  = var.log_level
+    EMAIL_ADMIN_REPORT_ENABLED = var.email_admin_report_enabled
+    EMAIL_SUBJECT              = var.email_subject
+    EMAIL_SOURCE               = var.email_source
+    ADMIN_EMAIL                = var.admin_email
+    KEY_AGE_WARNING            = var.key_age_warning
+    KEY_AGE_INACTIVE           = var.key_age_inactive
+    KEY_AGE_DELETE             = var.key_age_delete
+    KEY_USE_THRESHOLD          = var.key_use_threshold
+    S3_ENABLED                 = var.s3_enabled
+    S3_BUCKET                  = var.s3_bucket
+    EMAIL_TAG                  = var.email_tag
   }
 
   source_path = [

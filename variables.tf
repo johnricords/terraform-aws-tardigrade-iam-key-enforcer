@@ -14,7 +14,7 @@ variable "assume_role_name" {
   type        = string
 }
 
-variable "email_enabled" {
+variable "email_admin_report_enabled" {
   description = "Used to enable or disable the SES emailed report"
   type        = bool
   default     = false
@@ -23,6 +23,7 @@ variable "email_enabled" {
 variable "email_subject" {
   description = "Subject of the report email that is sent"
   type        = string
+  default     = null
 }
 
 variable "email_source" {

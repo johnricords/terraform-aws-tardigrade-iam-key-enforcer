@@ -16,7 +16,7 @@ Permissions:
 Environment Variables:
     LOG_LEVEL: (optional): sets the level for function logging
             valid input: critical, error, warning, info (default), debug
-    EMAIL_ENABLED: used to enable or disable the SES emailed report
+    EMAIL_ADMIN_REPORT_ENABLED: used to enable or disable the SES emailed report
     EMAIL_SOURCE: send from address for the email, authorized in SES
     EMAIL_SUBJECT: subject line for the email
     KEY_AGE_DELETE: age at which a key should be deleted (e.g. 120)
@@ -81,7 +81,9 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
-EMAIL_ENABLED = os.environ.get("EMAIL_ENABLED", "False").lower() == "true"
+EMAIL_ADMIN_REPORT_ENABLED = (
+    os.environ.get("EMAIL_ADMIN_REPORT_ENABLED", "False").lower() == "true"
+)
 EMAIL_SUBJECT = os.environ.get("EMAIL_SUBJECT")
 EMAIL_SOURCE = os.environ.get("EMAIL_SOURCE")
 KEY_AGE_WARNING = int(os.environ.get("KEY_AGE_WARNING", 75))
@@ -485,7 +487,7 @@ def process_message(html_body, event):
         log.info("S3 report not enabled per setting")
 
     # Optionally send report via SES Email
-    if EMAIL_ENABLED:
+    if EMAIL_ADMIN_REPORT_ENABLED:
         # Establish SES Client
         client_ses = SESSION.client("ses")
 
