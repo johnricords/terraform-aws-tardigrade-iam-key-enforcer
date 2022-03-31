@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "lambda" {
       "sts:AssumeRole"
     ]
     resources = [
-      var.policy_assume_role_arn
+      "arn:aws:iam::*:role/${var.assume_role_name}"
     ]
   }
 }

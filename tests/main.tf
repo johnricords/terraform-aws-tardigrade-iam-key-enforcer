@@ -185,7 +185,7 @@ module "iam_key_enforcer" {
 
   project_name = local.project
 
-  policy_assume_role_arn = "arn:aws:iam::*:role/${local.project}-iam-key-enforcer-role"
+  assume_role_name = "${local.project}-iam-key-enforcer-role"
 
   log_level         = "DEBUG"
   email_enabled     = true

@@ -9,7 +9,7 @@ variable "compatible_python_runtimes" {
   default     = ["python3.8"]
 }
 
-variable "policy_assume_role_arn" {
+variable "assume_role_name" {
   description = "The wildcard role arn that the lambda will be given permissions to assume"
   type        = string
 }
