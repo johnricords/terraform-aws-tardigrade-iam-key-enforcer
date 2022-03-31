@@ -17,6 +17,7 @@ variable "policy_assume_role_arn" {
 variable "email_enabled" {
   description = "Used to enable or disable the SES emailed report"
   type        = bool
+  default     = false
 }
 
 variable "email_subject" {
