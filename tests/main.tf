@@ -38,7 +38,7 @@ data "aws_iam_policy_document" "iam_key" {
     ]
 
     resources = [
-      "arn:aws:iam::*:user/*"
+      "arn:${data.aws_partition.current.partition}:iam::*:user/*"
     ]
   }
 }
