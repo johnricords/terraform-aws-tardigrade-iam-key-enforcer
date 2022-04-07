@@ -10,7 +10,7 @@ variable "compatible_python_runtimes" {
 }
 
 variable "assume_role_name" {
-  description = "The wildcard role arn that the lambda will be given permissions to assume"
+  description = "Name of the IAM role that the lambda will assume in the target account"
   type        = string
 }
 
