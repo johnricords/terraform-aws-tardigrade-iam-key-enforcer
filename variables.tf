@@ -20,7 +20,7 @@ variable "email_admin_report_enabled" {
   default     = false
 }
 
-variable "email_subject" {
+variable "email_admin_report_subject" {
   description = "Subject of the report email that is sent"
   type        = string
   default     = null

@@ -189,7 +189,7 @@ module "iam_key_enforcer" {
 
   log_level                  = "DEBUG"
   email_admin_report_enabled = true
-  email_subject              = "Test IAM Key Enforcement Report"
+  email_admin_report_subject = "Test IAM Key Enforcement Report"
   email_source               = var.email_source
   admin_email                = var.admin_email
   key_age_warning            = var.key_age_warning

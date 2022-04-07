@@ -18,7 +18,7 @@ Environment Variables:
             valid input: critical, error, warning, info (default), debug
     EMAIL_ADMIN_REPORT_ENABLED: used to enable or disable the SES emailed report
     EMAIL_SOURCE: send from address for the email, authorized in SES
-    EMAIL_SUBJECT: subject line for the email
+    EMAIL_ADMIN_REPORT_SUBJECT: subject line for the email
     KEY_AGE_DELETE: age at which a key should be deleted (e.g. 120)
     KEY_AGE_INACTIVE: age at which a key should be inactive (e.g. 90)
     KEY_AGE_WARNING: age at which to warn (e.g. 75)
@@ -84,7 +84,7 @@ ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
 EMAIL_ADMIN_REPORT_ENABLED = (
     os.environ.get("EMAIL_ADMIN_REPORT_ENABLED", "False").lower() == "true"
 )
-EMAIL_SUBJECT = os.environ.get("EMAIL_SUBJECT")
+EMAIL_ADMIN_REPORT_SUBJECT = os.environ.get("EMAIL_ADMIN_REPORT_SUBJECT")
 EMAIL_SOURCE = os.environ.get("EMAIL_SOURCE")
 KEY_AGE_WARNING = int(os.environ.get("KEY_AGE_WARNING", 75))
 KEY_AGE_INACTIVE = int(os.environ.get("KEY_AGE_INACTIVE", 90))
@@ -506,7 +506,7 @@ def process_message(html_body, event):
                 },
                 "Subject": {
                     "Charset": "UTF-8",
-                    "Data": EMAIL_SUBJECT,
+                    "Data": EMAIL_ADMIN_REPORT_SUBJECT,
                 },
             },
             Source=EMAIL_SOURCE,

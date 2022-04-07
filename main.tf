@@ -44,7 +44,7 @@ module "lambda" {
   environment_variables = {
     LOG_LEVEL                  = var.log_level
     EMAIL_ADMIN_REPORT_ENABLED = var.email_admin_report_enabled
-    EMAIL_SUBJECT              = var.email_subject
+    EMAIL_ADMIN_REPORT_SUBJECT = var.email_admin_report_subject
     EMAIL_SOURCE               = var.email_source
     ADMIN_EMAIL                = var.admin_email
     KEY_AGE_WARNING            = var.key_age_warning
