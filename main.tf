@@ -1,3 +1,5 @@
+data "aws_partition" "current" {}
+
 data "aws_iam_policy_document" "lambda" {
   statement {
     sid = "AllowS3Object"
@@ -6,7 +8,7 @@ data "aws_iam_policy_document" "lambda" {
       "s3:PutObjectTagging",
       "s3:PutObjectVersionTagging",
     ]
-    resources = ["arn:aws:s3:::${var.s3_bucket}/*"]
+    resources = ["arn:${data.aws_partition.current.partition}:s3:::${var.s3_bucket}/*"]
   }
   statement {
     actions = [
@@ -22,7 +24,7 @@ data "aws_iam_policy_document" "lambda" {
       "sts:AssumeRole"
     ]
     resources = [
-      "arn:aws:iam::*:role/${var.assume_role_name}"
+      "arn:${data.aws_partition.current.partition}:iam::*:role/${var.assume_role_name}"
     ]
   }
 }
