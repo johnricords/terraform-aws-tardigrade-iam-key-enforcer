@@ -13,3 +13,6 @@ terraform.tfstate.backup
 
 # python caches
 __pycache__/
+
+# build dirs
+**/builds

@@ -1,38 +1,76 @@
 variable "project_name" {
   description = "Project name to prefix resources with"
-}
-
-variable "account_number" {
-  description = "Account number to inspect"
   type        = string
 }
 
-variable "account_name" {
-  description = "Account name to inspect"
+variable "compatible_python_runtimes" {
+  description = "Compatible version of python to use defaults to 3.8"
+  type        = list(string)
+  default     = ["python3.8"]
+}
+
+variable "assume_role_name" {
+  description = "Name of the IAM role that the lambda will assume in the target account"
+  type        = string
+}
+
+variable "email_admin_report_enabled" {
+  description = "Used to enable or disable the SES emailed report"
+  type        = bool
+  default     = false
+}
+
+variable "email_admin_report_subject" {
+  description = "Subject of the report email that is sent"
+  type        = string
+  default     = null
+}
+
+variable "email_source" {
+  description = "Email that will be used to send messages"
+  type        = string
+}
+
+variable "email_tag" {
+  description = "Tag to be placed on the IAM user that we can use to notify when their key is going to be disabled/deleted"
+  type        = string
+  default     = "keyenforcer:email"
+}
+
+variable "admin_email" {
+  description = "Admin Email that will receive all emails and reports about actions taken if email is enabled"
   type        = string
 }
 
 variable "key_age_warning" {
-  description = "Number in days before key expiration that we begin warning"
+  description = "Age at which to warn (e.g. 75)"
   type        = number
-  default     = 14
 }
 
 variable "key_age_inactive" {
-  description = "The number in days before key expiration that we make the key inactive"
+  description = "Age at which a key should be inactive (e.g. 90)"
   type        = number
-  default     = 0
 }
 
 variable "key_age_delete" {
-  description = "Number in days before key expiration that we delete the key"
+  description = "Age at which a key should be deleted (e.g. 120)"
   type        = number
-  default     = 14
 }
 
-variable "exempt_group" {
-  description = "List of users who are exempt from key enforcement for an account"
-  type        = list(string)
+variable "key_use_threshold" {
+  description = "Age at which unused keys should be deleted (e.g.30)"
+  type        = number
+}
+
+variable "s3_enabled" {
+  description = "Set to 'true' and provide s3_bucket if the audit report should be written to S3"
+  type        = bool
+  default     = false
+}
+
+variable "s3_bucket" {
+  description = "Bucket name to write the audit report to if s3_enabled is set to 'true'"
+  type        = string
   default     = null
 }
 
@@ -46,40 +84,8 @@ variable "log_level" {
   }
 }
 
-variable "armed" {
-  description = ""
-  type        = bool
-  default     = false
-}
-
-variable "email_enabled" {
-  description = ""
-  type        = bool
-  default     = false
-}
-
-variable "s3_enabled" {
-  description = ""
-  type        = bool
-  default     = false
-}
-
-variable "email_subject" {
-  description = ""
-  type        = string
-}
-
-variable "email_source" {
-  description = ""
-  type        = string
-}
-
-variable "admin_email" {
-  description = ""
-  type        = string
-}
-
-variable "email_target" {
-  description = ""
-  type        = string
+variable "tags" {
+  description = "Tags for resource"
+  type        = map(string)
+  default     = {}
 }
