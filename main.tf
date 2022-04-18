@@ -191,7 +191,7 @@ resource "aws_iam_role" "assume_role" {
 module "scheduled_events" {
   source = "./modules/scheduled_event"
 
-  for_each = { for account in var.accounts : account.account_number => account }
+  for_each = { for account in var.accounts : account.account_name => account }
 
   event_name             = "${var.project_name}-${each.value.account_name}"
   event_rule_description = "Scheduled Event that runs IAM Key Enforcer Lambda for account ${each.value.account_number} - ${each.value.account_name}"
