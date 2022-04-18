@@ -80,8 +80,7 @@ locals {
 # SQS Queue Policy
 ##############################
 resource "aws_sqs_queue_policy" "this" {
-  count     = local.has_accounts
-  queue_url = aws_sqs_queue.this[0].id
+  queue_url = aws_sqs_queue.this.id
   policy = jsonencode(
     {
       Version = "2012-10-17",
@@ -92,7 +91,7 @@ resource "aws_sqs_queue_policy" "this" {
           Effect    = "Allow",
           Principal = "*",
           Action    = "sqs:SendMessage",
-          Resource  = aws_sqs_queue.this[0].arn,
+          Resource  = aws_sqs_queue.this.arn,
           Condition = {
             "ArnEquals" : {
               "aws:SourceArn" : "arn:${data.aws_partition.current.partition}:events:*:*:rule/${var.project_name}*"
@@ -108,7 +107,7 @@ resource "aws_sqs_queue_policy" "this" {
             ]
           },
           Action   = "sqs:ReceiveMessage",
-          Resource = aws_sqs_queue.this[0].arn,
+          Resource = aws_sqs_queue.this.arn,
         }
       ]
     }
@@ -119,7 +118,6 @@ resource "aws_sqs_queue_policy" "this" {
 # SQS Queue
 ##############################
 resource "aws_sqs_queue" "this" {
-  count                      = local.has_accounts
   name                       = "${var.project_name}-iam-key-enforcer-dlq"
   message_retention_seconds  = 1209600
   receive_wait_time_seconds  = 20
@@ -213,7 +211,7 @@ module "scheduled_events" {
   }
   tags = var.tags
   dead_letter_config = {
-    arn = aws_sqs_queue.this[0].arn
+    arn = aws_sqs_queue.this.arn
   }
 }
 
