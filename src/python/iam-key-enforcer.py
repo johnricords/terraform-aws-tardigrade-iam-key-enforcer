@@ -27,7 +27,7 @@ Environment Variables:
             should be written to S3
     S3_BUCKET: bucket name to write the audit report to if S3_ENABLED is
             set to "true"
- Event Variables:
+Event Variables:
     armed: Set to "true" to take action on keys;
             "false" limits to reporting
     role_arn: Arn of role to assume
