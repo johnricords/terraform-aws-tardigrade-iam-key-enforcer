@@ -74,6 +74,25 @@ variable "s3_bucket" {
   default     = null
 }
 
+variable "accounts" {
+  description = "List of account objects to create events for"
+  type = list(object({
+    account_name       = string
+    account_number     = string
+    armed              = bool
+    email_user_enabled = bool
+    email_target       = list(string)
+    exempt_groups      = list(string)
+  }))
+  default = []
+}
+
+variable "schedule_expression" {
+  description = "Schedule Expressions for Rules"
+  type        = string
+  default     = "cron(0 1 * * SUN *)"
+}
+
 variable "log_level" {
   description = "Log level for lambda"
   type        = string
