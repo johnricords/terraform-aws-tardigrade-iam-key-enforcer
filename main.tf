@@ -166,9 +166,9 @@ resource "aws_iam_policy" "iam_policy" {
   policy = data.aws_iam_policy_document.iam_key[0].json
 }
 
-resource "aws_iam_role" "cross_account" {
+resource "aws_iam_role" "assume_role" {
   count = local.has_accounts
-  name  = "${var.project_name}-iam-key-enforcer-role"
+  name  = var.assume_role_name
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -204,7 +204,7 @@ module "scheduled_events" {
     input_template = jsonencode({
       "account_number" : each.value.account_number,
       "account_name" : each.value.account_name,
-      "role_arn" : aws_iam_role.cross_account[0].arn,
+      "role_arn" : aws_iam_role.assume_role[0].arn,
       "armed" : each.value.armed,
       "email_target" : each.value.email_target,
       "exempt_groups" : each.value.exempt_groups,

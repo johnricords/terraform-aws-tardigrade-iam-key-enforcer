@@ -87,6 +87,12 @@ variable "accounts" {
   default = []
 }
 
+variable "assume_role_name" {
+  description = "Name of the cross account role name to be created"
+  type        = string
+  default     = "E_IAM_KEY_ENFORCER"
+}
+
 variable "schedule_expression" {
   description = "Schedule Expressions for Rules"
   type        = string
