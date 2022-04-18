@@ -12,6 +12,7 @@ variable "compatible_python_runtimes" {
 variable "assume_role_name" {
   description = "Name of the IAM role that the lambda will assume in the target account"
   type        = string
+  default     = "E_IAM_KEY_ENFORCER"
 }
 
 variable "email_admin_report_enabled" {
@@ -85,12 +86,6 @@ variable "accounts" {
     exempt_groups      = list(string)
   }))
   default = []
-}
-
-variable "assume_role_name" {
-  description = "Name of the cross account role name to be created"
-  type        = string
-  default     = "E_IAM_KEY_ENFORCER"
 }
 
 variable "schedule_expression" {
