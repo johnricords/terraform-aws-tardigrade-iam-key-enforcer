@@ -184,20 +184,12 @@ def process_users(
         # A row is a unique IAM user
         user_name = row["user"]
         log.debug("Processing user: %s", user_name)
-        exemption = False
 
         if user_name == "<root_account>":
             continue
 
-        # Test group exemption
-        groups = client_iam.list_groups_for_user(UserName=user_name)
-        for group in groups["Groups"]:
-            if group["GroupName"] in event["exempt_groups"]:
-                exemption = True
-                log.info(
-                    "User is exempt via group membership in: %s", group["GroupName"]
-                )
-                break
+        # Test group exempted
+        exempted = is_exempted(client_iam, user_name, event)
 
         # Process Access Keys for user
         access_keys = client_iam.list_access_keys(UserName=user_name)
@@ -211,7 +203,7 @@ def process_users(
             # last_used_date value will not exist if key not used
             last_used_date = get_key["AccessKeyLastUsed"].get("LastUsedDate")
 
-            if not last_used_date and key_age >= KEY_USE_THRESHOLD and not exemption:
+            if not last_used_date and key_age >= KEY_USE_THRESHOLD and not exempted:
                 # Key has not been used and has exceeded age threshold
                 # NOT EXEMPT: Delete unused
                 delete_access_key(
@@ -219,17 +211,12 @@ def process_users(
                 )
                 line = (
                     '<tr bgcolor= "#E6B0AA">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{ str(key_age)}</td>"
                     "<td>DELETED</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        str(last_used_date),
-                    )
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
                 html_body += line
 
@@ -237,99 +224,69 @@ def process_users(
             if key_age < KEY_AGE_WARNING:
                 continue
 
-            if key_age >= KEY_AGE_DELETE and not exemption:
+            if key_age >= KEY_AGE_DELETE and not exempted:
                 # NOT EXEMPT: Delete
                 delete_access_key(
                     access_key_id, user_name, client_iam, client_ses, event
                 )
                 line = (
                     '<tr bgcolor= "#E6B0AA">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
                     "<td>DELETED</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        str(last_used_date),
-                    )
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
-            elif key_age >= KEY_AGE_INACTIVE and not exemption:
+            elif key_age >= KEY_AGE_INACTIVE and not exempted:
                 # NOT EXEMPT: Disable
                 disable_access_key(
                     access_key_id, user_name, client_iam, client_ses, event
                 )
                 line = (
                     '<tr bgcolor= "#F4D03F">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        key["Status"],
-                        str(last_used_date),
-                    )
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
+                    f'<td>{key["Status"]}</td>'
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
-            elif not exemption:
+            elif not exempted:
                 # NOT EXEMPT: Report
                 line = (
                     '<tr bgcolor= "#FFFFFF">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        key["Status"],
-                        str(last_used_date),
-                    )
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
+                    f'<td>{key["Status"]}</td>'
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
-            elif (
-                key_age >= KEY_AGE_DELETE and exemption and key["Status"] == "Inactive"
-            ):
+            elif key_age >= KEY_AGE_DELETE and exempted and key["Status"] == "Inactive":
                 # EXEMPT: Delete if Inactive
                 delete_access_key(
                     access_key_id, user_name, client_iam, client_ses, event
                 )
                 line = (
                     '<tr bgcolor= "#E6B0AA">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
                     "<td>DELETED</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        str(last_used_date),
-                    )
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
-            elif exemption:
+            elif exempted:
                 # EXEMPT: Report
                 line = (
                     '<tr bgcolor= "#D7DBDD">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        key["Status"],
-                        str(last_used_date),
-                    )
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
+                    f'<td>{key["Status"]}</td>'
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
             else:
                 raise Exception(f"Unhandled case for Access Key {key['AccessKeyId']}")
@@ -346,6 +303,14 @@ def process_users(
     if str(html_body) == "":
         html_body = "All Access Keys for this account are compliant."
     return html_body
+
+
+def is_exempted(client_iam, user_name, event):
+    groups = client_iam.list_groups_for_user(UserName=user_name)
+    for group in groups["Groups"]:
+        if group["GroupName"] in event["exempt_groups"]:
+            log.info("User is exempt via group membership in: %s", group["GroupName"])
+            return True
 
 
 ###############################################################################

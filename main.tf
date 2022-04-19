@@ -35,7 +35,7 @@ module "lambda" {
 
   function_name       = "${var.project_name}-iam-key-enforcer"
   description         = "Lambda function for Key Enforcement"
-  handler             = "iam-key-enforcer.lambda_handler"
+  handler             = "iam_key_enforcer.lambda_handler"
   attach_policy_json  = true
   policy_json         = data.aws_iam_policy_document.lambda.json
   runtime             = "python3.8"
