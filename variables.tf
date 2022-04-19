@@ -80,6 +80,7 @@ variable "accounts" {
   type = list(object({
     account_name       = string
     account_number     = string
+    role_name          = string
     armed              = bool
     email_user_enabled = bool
     email_target       = list(string)

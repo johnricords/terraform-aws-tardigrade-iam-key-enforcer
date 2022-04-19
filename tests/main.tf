@@ -47,6 +47,7 @@ module "iam_key_enforcer" {
     {
       account_name       = var.account_name
       account_number     = data.aws_caller_identity.current.account_id
+      role_name          = "${local.project}-iam-key-enforcer-role"
       armed              = false
       email_user_enabled = true
       email_target       = [var.email_target]

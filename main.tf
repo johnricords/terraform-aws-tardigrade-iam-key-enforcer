@@ -202,7 +202,7 @@ module "scheduled_events" {
     input_template = jsonencode({
       "account_number" : each.value.account_number,
       "account_name" : each.value.account_name,
-      "role_arn" : aws_iam_role.assume_role[0].arn,
+      "role_arn" : "arn:${data.aws_partition.current.partition}:iam::${each.value.account_number}:role/${each.value.role_name}",
       "armed" : each.value.armed,
       "email_target" : each.value.email_target,
       "exempt_groups" : each.value.exempt_groups,
