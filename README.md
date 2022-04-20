@@ -19,7 +19,7 @@ The function audits each user in an account for access keys and determines how l
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.6.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 3.0 |
 
 ## Resources
 
