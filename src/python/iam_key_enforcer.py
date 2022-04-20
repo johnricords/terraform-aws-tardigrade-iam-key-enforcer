@@ -305,7 +305,7 @@ def process_users(
 
 
 def is_exempted(client_iam, user_name, event):
-    """Determines if user is in an exempted group"""
+    """Determine if user is in an exempted group."""
     groups = client_iam.list_groups_for_user(UserName=user_name)
     for group in groups["Groups"]:
         if group["GroupName"] in event["exempt_groups"]:
@@ -370,7 +370,7 @@ def disable_access_key(access_key_id, user_name, client, client_ses, event):
 
 
 def get_email_html(user_name, access_key_id, key_age, action):
-    """Get the html for the email"""
+    """Get the html for the email."""
     return (
         f"<html><h1>Expiring Access Key Report for {user_name} </h1>"
         f"<p>The following access key {access_key_id} is over {key_age} days old "
@@ -385,7 +385,7 @@ def get_email_html(user_name, access_key_id, key_age, action):
 
 
 def get_email_targets(client, user_name, event):
-    """Get the users email if exists and admin email targets"""
+    """Get the users email if exists and admin email targets."""
     tags = client.list_user_tags(UserName=user_name)
 
     email = ""
@@ -406,8 +406,7 @@ def get_email_targets(client, user_name, event):
 
 
 def email_user(client_ses, subject, html, email_targets):
-    """Email user with the action taken on their key"""
-
+    """Email user with the action taken on their key."""
     # Construct and Send Email
     response = client_ses.send_email(
         Destination={"ToAddresses": email_targets},
@@ -429,7 +428,7 @@ def email_user(client_ses, subject, html, email_targets):
 
 
 def is_valid_email_address(email):
-    """Checks to see if the email address is valid"""
+    """Check to see if the email address is valid."""
     return re.fullmatch(email_regex, email)
 
 
