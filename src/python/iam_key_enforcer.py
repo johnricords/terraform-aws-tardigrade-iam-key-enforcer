@@ -27,7 +27,7 @@ Environment Variables:
             should be written to S3
     S3_BUCKET: bucket name to write the audit report to if S3_ENABLED is
             set to "true"
- Event Variables:
+Event Variables:
     armed: Set to "true" to take action on keys;
             "false" limits to reporting
     role_arn: Arn of role to assume
@@ -47,7 +47,6 @@ import re
 from time import sleep
 import datetime
 import dateutil
-import json
 
 import boto3
 from aws_assume_role_lib import assume_role, generate_lambda_session_name
@@ -184,20 +183,12 @@ def process_users(
         # A row is a unique IAM user
         user_name = row["user"]
         log.debug("Processing user: %s", user_name)
-        exemption = False
 
         if user_name == "<root_account>":
             continue
 
-        # Test group exemption
-        groups = client_iam.list_groups_for_user(UserName=user_name)
-        for group in groups["Groups"]:
-            if group["GroupName"] in event["exempt_groups"]:
-                exemption = True
-                log.info(
-                    "User is exempt via group membership in: %s", group["GroupName"]
-                )
-                break
+        # Test group exempted
+        exempted = is_exempted(client_iam, user_name, event)
 
         # Process Access Keys for user
         access_keys = client_iam.list_access_keys(UserName=user_name)
@@ -211,7 +202,7 @@ def process_users(
             # last_used_date value will not exist if key not used
             last_used_date = get_key["AccessKeyLastUsed"].get("LastUsedDate")
 
-            if not last_used_date and key_age >= KEY_USE_THRESHOLD and not exemption:
+            if not last_used_date and key_age >= KEY_USE_THRESHOLD and not exempted:
                 # Key has not been used and has exceeded age threshold
                 # NOT EXEMPT: Delete unused
                 delete_access_key(
@@ -219,17 +210,12 @@ def process_users(
                 )
                 line = (
                     '<tr bgcolor= "#E6B0AA">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{ str(key_age)}</td>"
                     "<td>DELETED</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        str(last_used_date),
-                    )
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
                 html_body += line
 
@@ -237,99 +223,69 @@ def process_users(
             if key_age < KEY_AGE_WARNING:
                 continue
 
-            if key_age >= KEY_AGE_DELETE and not exemption:
+            if key_age >= KEY_AGE_DELETE and not exempted:
                 # NOT EXEMPT: Delete
                 delete_access_key(
                     access_key_id, user_name, client_iam, client_ses, event
                 )
                 line = (
                     '<tr bgcolor= "#E6B0AA">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
                     "<td>DELETED</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        str(last_used_date),
-                    )
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
-            elif key_age >= KEY_AGE_INACTIVE and not exemption:
+            elif key_age >= KEY_AGE_INACTIVE and not exempted:
                 # NOT EXEMPT: Disable
                 disable_access_key(
                     access_key_id, user_name, client_iam, client_ses, event
                 )
                 line = (
                     '<tr bgcolor= "#F4D03F">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        key["Status"],
-                        str(last_used_date),
-                    )
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
+                    f'<td>{key["Status"]}</td>'
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
-            elif not exemption:
+            elif not exempted:
                 # NOT EXEMPT: Report
                 line = (
                     '<tr bgcolor= "#FFFFFF">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        key["Status"],
-                        str(last_used_date),
-                    )
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
+                    f'<td>{key["Status"]}</td>'
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
-            elif (
-                key_age >= KEY_AGE_DELETE and exemption and key["Status"] == "Inactive"
-            ):
+            elif key_age >= KEY_AGE_DELETE and exempted and key["Status"] == "Inactive":
                 # EXEMPT: Delete if Inactive
                 delete_access_key(
                     access_key_id, user_name, client_iam, client_ses, event
                 )
                 line = (
                     '<tr bgcolor= "#E6B0AA">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
                     "<td>DELETED</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        str(last_used_date),
-                    )
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
-            elif exemption:
+            elif exempted:
                 # EXEMPT: Report
                 line = (
                     '<tr bgcolor= "#D7DBDD">'
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "<td>{}</td>"
-                    "</tr>".format(
-                        user_name,
-                        key["AccessKeyId"],
-                        str(key_age),
-                        key["Status"],
-                        str(last_used_date),
-                    )
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
+                    f'<td>{key["Status"]}</td>'
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
                 )
             else:
                 raise Exception(f"Unhandled case for Access Key {key['AccessKeyId']}")
@@ -348,6 +304,16 @@ def process_users(
     return html_body
 
 
+def is_exempted(client_iam, user_name, event):
+    """Determine if user is in an exempted group."""
+    groups = client_iam.list_groups_for_user(UserName=user_name)
+    for group in groups["Groups"]:
+        if group["GroupName"] in event["exempt_groups"]:
+            log.info("User is exempt via group membership in: %s", group["GroupName"])
+            return True
+    return False
+
+
 ###############################################################################
 # Take action on Access Keys
 ###############################################################################
@@ -359,7 +325,20 @@ def delete_access_key(access_key_id, user_name, client, client_ses, event):
 
     if event["armed"]:
         client.delete_access_key(UserName=user_name, AccessKeyId=access_key_id)
-        email_user(access_key_id, user_name, client, client_ses, "deleted", event)
+        if event["email_user_enabled"]:
+            email_targets = get_email_targets(client, user_name, event)
+            email_html = get_email_html(
+                user_name, access_key_id, KEY_AGE_DELETE, "deleted"
+            )
+            email_user(
+                client_ses,
+                f"IAM User Key Deleted for {user_name}",
+                email_html,
+                email_targets,
+            )
+        else:
+            log.info("Email not enabled per environment variable setting")
+
     else:
         log.info("Not armed, no action taken")
 
@@ -372,101 +351,103 @@ def disable_access_key(access_key_id, user_name, client, client_ses, event):
         client.update_access_key(
             UserName=user_name, AccessKeyId=access_key_id, Status="Inactive"
         )
-        email_user(access_key_id, user_name, client, client_ses, "disabled", event)
+        if event["email_user_enabled"]:
+            email_targets = get_email_targets(client, user_name, event)
+            email_html = get_email_html(
+                user_name, access_key_id, KEY_AGE_INACTIVE, "disabled"
+            )
+            email_user(
+                client_ses,
+                f"IAM User Key Disabled for {user_name}",
+                email_html,
+                email_targets,
+            )
+
+        else:
+            log.info("Email not enabled per environment variable setting")
     else:
         log.info("Not armed, no action taken")
 
 
-def email_user(access_key_id, user_name, client, client_ses, action, event):
-    """Email user with the action taken on their key"""
-    if event["email_user_enabled"]:
-        tags = client.list_user_tags(UserName=user_name)
+def get_email_html(user_name, access_key_id, key_age, action):
+    """Get the html for the email."""
+    return (
+        f"<html><h1>Expiring Access Key Report for {user_name} </h1>"
+        f"<p>The following access key {access_key_id} is over {key_age} days old "
+        f"and has been {action}.</p>"
+        "<table>"
+        "<tr><td><b>IAM User Name</b></td>"
+        "<td><b>Access Key ID</b></td>"
+        "<td><b>Key Age</b></td>"
+        "<td><b>Key Status</b></td>"
+        "<td><b>Last Used</b></td></tr></table></html>"
+    )
 
-        email = ""
-        for tag in tags["Tags"]:
-            if tag["Key"].lower() == EMAIL_TAG:
-                email = tag["Value"]
 
-        email_targets = [event["email_target"], ADMIN_EMAIL]
-        if is_valid_email(email):
-            email_targets.append(email)
-        else:
-            log.error(
-                "Invalid email found for user: %s, email: %s",
-                user_name,
-                email,
-            )
+def get_email_targets(client, user_name, event):
+    """Get the users email if exists and admin email targets."""
+    tags = client.list_user_tags(UserName=user_name)
 
-        if action == "disabled":
-            subject = "IAM User Key Disabled for {}".format(user_name)
-            key_age = KEY_AGE_INACTIVE
-        else:
-            subject = "IAM User Key Deleted for {}".format(user_name)
-            key_age = KEY_AGE_DELETE
+    email = ""
+    for tag in tags["Tags"]:
+        if tag["Key"].lower() == EMAIL_TAG:
+            email = tag["Value"]
 
-        html = (
-            "<html><h1>Expiring Access Key Report for {} </h1>"
-            "<p>The following access key {} is over {} days old "
-            "and has been {}.</p>"
-            "<table>"
-            "<tr><td><b>IAM User Name</b></td>"
-            "<td><b>Access Key ID</b></td>"
-            "<td><b>Key Age</b></td>"
-            "<td><b>Key Status</b></td>"
-            "<td><b>Last Used</b></td></tr></table></html>".format(
-                user_name,
-                access_key_id,
-                key_age,
-                action,
-            )
-        )
-
-        # Construct and Send Email
-        response = client_ses.send_email(
-            Destination={"ToAddresses": email_targets},
-            Message={
-                "Body": {
-                    "Html": {
-                        "Charset": "UTF-8",
-                        "Data": html,
-                    }
-                },
-                "Subject": {
-                    "Charset": "UTF-8",
-                    "Data": subject,
-                },
-            },
-            Source=EMAIL_SOURCE,
-        )
-        log.info("Success. Message ID: %s", response["MessageId"])
+    email_targets = [event["email_target"], ADMIN_EMAIL]
+    if is_valid_email_address(email):
+        email_targets.append(email)
     else:
-        log.info("Email not enabled per environment variable setting")
+        log.error(
+            "Invalid email found for user: %s, email: %s",
+            user_name,
+            email,
+        )
+    return email_targets
 
 
-def is_valid_email(email):
+def email_user(client_ses, subject, html, email_targets):
+    """Email user with the action taken on their key."""
+    # Construct and Send Email
+    response = client_ses.send_email(
+        Destination={"ToAddresses": email_targets},
+        Message={
+            "Body": {
+                "Html": {
+                    "Charset": "UTF-8",
+                    "Data": html,
+                }
+            },
+            "Subject": {
+                "Charset": "UTF-8",
+                "Data": subject,
+            },
+        },
+        Source=EMAIL_SOURCE,
+    )
+    log.info("Success. Message ID: %s", response["MessageId"])
+
+
+def is_valid_email_address(email):
+    """Check to see if the email address is valid."""
     return re.fullmatch(email_regex, email)
 
 
 def process_message(html_body, event):
     """Generate HTML and send to SES."""
     html_header = (
-        "<html><h1>Expiring Access Key Report for {} - {} </h1>"
-        "<p>The following access keys are over {} days old "
-        "and will soon be marked inactive ({} days) and deleted ({} days).</p>"
-        "<p>Grayed out rows are exempt via membership in an IAM Group(s): {}</p>"
+        "<html><h1>Expiring Access Key Report for "
+        f'{event["account_number"]} - {event["account_name"]}</h1>'
+        f"<p>The following access keys are over {KEY_AGE_WARNING} days old "
+        f"and will soon be marked inactive ({KEY_AGE_INACTIVE} days) "
+        f"and deleted ({KEY_AGE_DELETE} days).</p>"
+        f"<p>Grayed out rows are exempt via membership in an IAM Group(s): "
+        f'{", ".join(event["exempt_groups"])}</p>'
         "<table>"
         "<tr><td><b>IAM User Name</b></td>"
         "<td><b>Access Key ID</b></td>"
         "<td><b>Key Age</b></td>"
         "<td><b>Key Status</b></td>"
-        "<td><b>Last Used</b></td></tr>".format(
-            event["account_number"],
-            event["account_name"],
-            KEY_AGE_WARNING,
-            KEY_AGE_INACTIVE,
-            KEY_AGE_DELETE,
-            ", ".join(event["exempt_groups"]),
-        )
+        "<td><b>Last Used</b></td></tr>"
     )
 
     html_footer = "</table></html>"

@@ -12,6 +12,7 @@ variable "compatible_python_runtimes" {
 variable "assume_role_name" {
   description = "Name of the IAM role that the lambda will assume in the target account"
   type        = string
+  default     = "E_IAM_KEY_ENFORCER"
 }
 
 variable "email_admin_report_enabled" {
@@ -72,6 +73,26 @@ variable "s3_bucket" {
   description = "Bucket name to write the audit report to if s3_enabled is set to 'true'"
   type        = string
   default     = null
+}
+
+variable "accounts" {
+  description = "List of account objects to create events for"
+  type = list(object({
+    account_name       = string
+    account_number     = string
+    role_name          = string
+    armed              = bool
+    email_user_enabled = bool
+    email_target       = list(string)
+    exempt_groups      = list(string)
+  }))
+  default = []
+}
+
+variable "schedule_expression" {
+  description = "Schedule Expressions for Rules"
+  type        = string
+  default     = "cron(0 1 * * SUN *)"
 }
 
 variable "log_level" {

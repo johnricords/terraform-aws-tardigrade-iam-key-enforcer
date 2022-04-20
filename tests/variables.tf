@@ -26,12 +26,6 @@ variable "admin_email" {
   type        = string
 }
 
-variable "schedule_expression" {
-  description = "Schedule Expressions for Rules"
-  type        = string
-  default     = "rate(5 minutes)"
-}
-
 variable "key_age_warning" {
   description = "Age at which to warn (e.g. 75)"
   type        = number
