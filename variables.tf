@@ -92,7 +92,7 @@ variable "accounts" {
 variable "schedule_expression" {
   description = "Schedule Expressions for Rules"
   type        = string
-  default     = "cron(0 1 * * SUN *)"
+  default     = "cron(0 1 ? * SUN *)"
 }
 
 variable "log_level" {
