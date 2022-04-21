@@ -19,7 +19,7 @@ The function audits each user in an account for access keys and determines how l
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 3.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.6.0 |
 
 ## Resources
 
@@ -50,7 +50,7 @@ The function audits each user in an account for access keys and determines how l
 | <a name="input_log_level"></a> [log\_level](#input\_log\_level) | Log level for lambda | `string` | `"INFO"` | no |
 | <a name="input_s3_bucket"></a> [s3\_bucket](#input\_s3\_bucket) | Bucket name to write the audit report to if s3\_enabled is set to 'true' | `string` | `null` | no |
 | <a name="input_s3_enabled"></a> [s3\_enabled](#input\_s3\_enabled) | Set to 'true' and provide s3\_bucket if the audit report should be written to S3 | `bool` | `false` | no |
-| <a name="input_schedule_expression"></a> [schedule\_expression](#input\_schedule\_expression) | Schedule Expressions for Rules | `string` | `"cron(0 1 * * SUN *)"` | no |
+| <a name="input_schedule_expression"></a> [schedule\_expression](#input\_schedule\_expression) | Schedule Expressions for Rules | `string` | `"cron(0 1 ? * SUN *)"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags for resource | `map(string)` | `{}` | no |
 
 ## Outputs
