@@ -431,9 +431,9 @@ def email_user(client_ses, subject, html, email_targets):
     log.info("Success. Message ID: %s", response["MessageId"])
 
 
-def _append_email_to_list(list, email, email_type):
+def _append_email_to_list(email_list, email, email_type):
     if _is_valid_email_address(email):
-        list.append(email)
+        email_list.append(email)
     else:
         log.error(
             "Invalid %s email found - email: %s",
@@ -441,7 +441,7 @@ def _append_email_to_list(list, email, email_type):
             email,
         )
 
-    return list
+    return email_list
 
 
 def _is_valid_email_address(email):
@@ -453,7 +453,8 @@ def _is_valid_email_address(email):
 
 
 def process_message(html_body, event):
-    """Generate HTML and send report to email_targets list for tenant accound and ADMIN_EMAIL via SES."""
+    """Generate HTML and send report to email_targets list for tenant
+    accound and ADMIN_EMAIL via SES."""
     html_header = (
         "<html><h1>Expiring Access Key Report for "
         f'{event["account_number"]} - {event["account_name"]}</h1>'
