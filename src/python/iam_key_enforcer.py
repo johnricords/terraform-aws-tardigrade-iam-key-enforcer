@@ -453,7 +453,7 @@ def _is_valid_email_address(email):
 
 
 def process_message(html_body, event):
-    """Generate HTML and send report to email_targets list for tenant
+    """Generate HTML and send report to email_targets list for tenant \
     accound and ADMIN_EMAIL via SES."""
     html_header = (
         "<html><h1>Expiring Access Key Report for "
