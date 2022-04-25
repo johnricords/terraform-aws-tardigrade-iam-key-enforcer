@@ -83,7 +83,7 @@ variable "accounts" {
     role_name          = string
     armed              = bool
     email_user_enabled = bool
-    email_target       = list(string)
+    email_targets      = list(string)
     exempt_groups      = list(string)
   }))
   default = []
