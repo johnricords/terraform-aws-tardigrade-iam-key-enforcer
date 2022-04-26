@@ -34,7 +34,7 @@ Event Variables:
     account_name: AWS Account (friendly) Name
     account_number: AWS Account Number
     email_user_enabled: used to enable or disable the SES emailed report
-    email_target: default email address if event fails to pass a valid one
+    email_targets: default email address if event fails to pass a valid one
     exempt_groups: IAM Groups that are exempt from actions on access keys
 
 """
@@ -393,20 +393,40 @@ def get_email_targets(client, user_name, event):
         if tag["Key"].lower() == EMAIL_TAG:
             email = tag["Value"]
 
-    email_targets = [event["email_target"], ADMIN_EMAIL]
-    if is_valid_email_address(email):
+    email_targets = []
+
+    if _validate_email(ADMIN_EMAIL, "admin"):
+        email_targets.append(ADMIN_EMAIL)
+
+    for email_target in event["email_targets"]:
+        if _validate_email(email_target, "target"):
+            email_targets.append(email_target)
+
+    if _validate_email(email, f"user ({user_name})"):
         email_targets.append(email)
-    else:
+
+    return email_targets
+
+
+def _validate_email(email, email_type):
+
+    if not email or not re.fullmatch(email_regex, email):
         log.error(
-            "Invalid email found for user: %s, email: %s",
-            user_name,
+            "Invalid %s email found - email: %s",
+            email_type,
             email,
         )
-    return email_targets
+        return False
+
+    return True
 
 
 def email_user(client_ses, subject, html, email_targets):
     """Email user with the action taken on their key."""
+    if not email_targets:
+        log.error("Email targets list is empty, no emails sent")
+        return
+
     # Construct and Send Email
     response = client_ses.send_email(
         Destination={"ToAddresses": email_targets},
@@ -427,13 +447,9 @@ def email_user(client_ses, subject, html, email_targets):
     log.info("Success. Message ID: %s", response["MessageId"])
 
 
-def is_valid_email_address(email):
-    """Check to see if the email address is valid."""
-    return re.fullmatch(email_regex, email)
-
-
 def process_message(html_body, event):
-    """Generate HTML and send to SES."""
+    """Generate HTML and send report to email_targets list for tenant \
+    account and ADMIN_EMAIL via SES."""
     html_header = (
         "<html><h1>Expiring Access Key Report for "
         f'{event["account_number"]} - {event["account_name"]}</h1>'
@@ -472,8 +488,18 @@ def process_message(html_body, event):
         # Establish SES Client
         client_ses = SESSION.client("ses")
 
-        to_addresses = event["email_target"]
-        to_addresses.append(ADMIN_EMAIL)
+        to_addresses = []
+
+        if _validate_email(ADMIN_EMAIL, "admin"):
+            to_addresses.append(ADMIN_EMAIL)
+
+        for email_target in event["email_targets"]:
+            if _validate_email(email_target, "target"):
+                to_addresses.append(email_target)
+
+        if not to_addresses:
+            log.error("Admin email list is empty, no emails sent")
+            return
 
         # Construct and Send Email
         response = client_ses.send_email(

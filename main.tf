@@ -204,7 +204,7 @@ module "scheduled_events" {
       "account_name" : each.value.account_name,
       "role_arn" : "arn:${data.aws_partition.current.partition}:iam::${each.value.account_number}:role/${each.value.role_name}",
       "armed" : each.value.armed,
-      "email_target" : each.value.email_target,
+      "email_targets" : each.value.email_targets,
       "exempt_groups" : each.value.exempt_groups,
       "email_user_enabled" : each.value.email_user_enabled,
     })

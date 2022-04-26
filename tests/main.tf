@@ -50,7 +50,7 @@ module "iam_key_enforcer" {
       role_name          = "${local.project}-iam-key-enforcer-role"
       armed              = false
       email_user_enabled = true
-      email_target       = [var.email_target]
+      email_targets      = [var.email_target]
       exempt_groups      = var.exempt_groups
     }
   ]
