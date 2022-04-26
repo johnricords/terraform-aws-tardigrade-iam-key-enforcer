@@ -395,19 +395,35 @@ def get_email_targets(client, user_name, event):
 
     email_targets = []
 
-    email_targets = _append_email_to_list(email_targets, ADMIN_EMAIL, "admin")
+    if _validate_email(ADMIN_EMAIL, "admin"):
+        email_targets.append(ADMIN_EMAIL)
 
     for email_target in event["email_targets"]:
-        email_targets = _append_email_to_list(email_targets, email_target, "target")
+        if _validate_email(email_target, "target"):
+            email_targets.append(email_target)
 
-    email_targets = _append_email_to_list(email_targets, email, f"user ({user_name})")
+    if _validate_email(email, f"user ({user_name})"):
+        email_targets.append(email)
 
     return email_targets
 
 
+def _validate_email(email, email_type):
+
+    if not email or not re.fullmatch(email_regex, email):
+        log.error(
+            "Invalid %s email found - email: %s",
+            email_type,
+            email,
+        )
+        return False
+
+    return True
+
+
 def email_user(client_ses, subject, html, email_targets):
     """Email user with the action taken on their key."""
-    if len(email_targets) == 0:
+    if not email_targets:
         log.error("Email targets list is empty, no emails sent")
         return
 
@@ -429,27 +445,6 @@ def email_user(client_ses, subject, html, email_targets):
         Source=EMAIL_SOURCE,
     )
     log.info("Success. Message ID: %s", response["MessageId"])
-
-
-def _append_email_to_list(email_list, email, email_type):
-    if _is_valid_email_address(email):
-        email_list.append(email)
-    else:
-        log.error(
-            "Invalid %s email found - email: %s",
-            email_type,
-            email,
-        )
-
-    return email_list
-
-
-def _is_valid_email_address(email):
-    """Check to see if the email address is valid."""
-    if not email:
-        return False
-
-    return re.fullmatch(email_regex, email)
 
 
 def process_message(html_body, event):
@@ -494,11 +489,15 @@ def process_message(html_body, event):
         client_ses = SESSION.client("ses")
 
         to_addresses = []
-        for email_target in event["email_targets"]:
-            to_addresses = _append_email_to_list(to_addresses, email_target, "target")
-        to_addresses = _append_email_to_list(to_addresses, ADMIN_EMAIL, "admin")
 
-        if len(to_addresses) == 0:
+        if _validate_email(ADMIN_EMAIL, "admin"):
+            to_addresses.append(ADMIN_EMAIL)
+
+        for email_target in event["email_targets"]:
+            if _validate_email(email_target, "target"):
+                to_addresses.append(email_target)
+
+        if not to_addresses:
             log.error("Admin email list is empty, no emails sent")
             return
 
