@@ -449,7 +449,7 @@ def email_user(client_ses, subject, html, email_targets):
 
 def process_message(html_body, event):
     """Generate HTML and send report to email_targets list for tenant \
-    accound and ADMIN_EMAIL via SES."""
+    account and ADMIN_EMAIL via SES."""
     html_header = (
         "<html><h1>Expiring Access Key Report for "
         f'{event["account_number"]} - {event["account_name"]}</h1>'
