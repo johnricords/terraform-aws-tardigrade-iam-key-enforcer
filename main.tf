@@ -55,6 +55,7 @@ module "lambda" {
     S3_ENABLED                 = var.s3_enabled
     S3_BUCKET                  = var.s3_bucket
     EMAIL_TAG                  = var.email_tag
+    EMAIL_BANNER_MSG           = var.email_banner_message
   }
 
   source_path = [

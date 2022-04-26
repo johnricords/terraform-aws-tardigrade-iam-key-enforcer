@@ -92,6 +92,7 @@ KEY_USE_THRESHOLD = int(os.environ.get("KEY_USE_THRESHOLD", 30))
 S3_ENABLED = os.environ.get("S3_ENABLED", "False").lower() == "true"
 S3_BUCKET = os.environ.get("S3_BUCKET", None)
 EMAIL_TAG = os.environ.get("EMAIL_TAG", "keyenforcer:email").lower()
+EMAIL_BANNER_MSG = os.environ.get("EMAIL_BANNER_MSG", "").strip()
 
 # Get the Lambda session
 SESSION = boto3.Session()
@@ -325,22 +326,21 @@ def delete_access_key(access_key_id, user_name, client, client_ses, event):
 
     if event["armed"]:
         client.delete_access_key(UserName=user_name, AccessKeyId=access_key_id)
-        if event["email_user_enabled"]:
-            email_targets = get_email_targets(client, user_name, event)
-            email_html = get_email_html(
-                user_name, access_key_id, KEY_AGE_DELETE, "deleted"
-            )
-            email_user(
-                client_ses,
-                f"IAM User Key Deleted for {user_name}",
-                email_html,
-                email_targets,
-            )
-        else:
-            log.info("Email not enabled per environment variable setting")
 
     else:
         log.info("Not armed, no action taken")
+
+    if event["email_user_enabled"]:
+        email_targets = get_email_targets(client, user_name, event)
+        email_html = get_email_html(user_name, access_key_id, KEY_AGE_DELETE, "deleted")
+        email_user(
+            client_ses,
+            f"IAM User Key Deleted for {user_name}",
+            email_html,
+            email_targets,
+        )
+    else:
+        log.info("Email not enabled per environment variable setting")
 
 
 def disable_access_key(access_key_id, user_name, client, client_ses, event):
@@ -351,28 +351,31 @@ def disable_access_key(access_key_id, user_name, client, client_ses, event):
         client.update_access_key(
             UserName=user_name, AccessKeyId=access_key_id, Status="Inactive"
         )
-        if event["email_user_enabled"]:
-            email_targets = get_email_targets(client, user_name, event)
-            email_html = get_email_html(
-                user_name, access_key_id, KEY_AGE_INACTIVE, "disabled"
-            )
-            email_user(
-                client_ses,
-                f"IAM User Key Disabled for {user_name}",
-                email_html,
-                email_targets,
-            )
-
-        else:
-            log.info("Email not enabled per environment variable setting")
     else:
         log.info("Not armed, no action taken")
+
+    if event["email_user_enabled"]:
+        email_targets = get_email_targets(client, user_name, event)
+        email_html = get_email_html(
+            user_name, access_key_id, KEY_AGE_INACTIVE, "disabled"
+        )
+        email_user(
+            client_ses,
+            f"IAM User Key Disabled for {user_name}",
+            email_html,
+            email_targets,
+        )
+
+    else:
+        log.info("Email not enabled per environment variable setting")
 
 
 def get_email_html(user_name, access_key_id, key_age, action):
     """Get the html for the email."""
     return (
-        f"<html><h1>Expiring Access Key Report for {user_name} </h1>"
+        "<html>"
+        f"{_get_banner_html()}"
+        f"<h1>Expiring Access Key Report for {user_name} </h1>"
         f"<p>The following access key {access_key_id} is over {key_age} days old "
         f"and has been {action}.</p>"
         "<table>"
@@ -450,8 +453,11 @@ def email_user(client_ses, subject, html, email_targets):
 def process_message(html_body, event):
     """Generate HTML and send report to email_targets list for tenant \
     account and ADMIN_EMAIL via SES."""
+
     html_header = (
-        "<html><h1>Expiring Access Key Report for "
+        "<html>"
+        f"{_get_banner_html()}"
+        "<h1>Expiring Access Key Report for "
         f'{event["account_number"]} - {event["account_name"]}</h1>'
         f"<p>The following access keys are over {KEY_AGE_WARNING} days old "
         f"and will soon be marked inactive ({KEY_AGE_INACTIVE} days) "
@@ -521,6 +527,13 @@ def process_message(html_body, event):
         log.info("Success. Message ID: %s", response["MessageId"])
     else:
         log.info("Email not enabled per setting")
+
+
+def _get_banner_html():
+    if not EMAIL_BANNER_MSG:
+        return ""
+
+    return f"<h1>{EMAIL_BANNER_MSG}</h1>"
 
 
 def object_age(last_changed):
