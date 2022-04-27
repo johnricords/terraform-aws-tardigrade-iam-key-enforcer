@@ -46,6 +46,8 @@ The function audits each user in an account for access keys and determines how l
 | <a name="input_compatible_python_runtimes"></a> [compatible\_python\_runtimes](#input\_compatible\_python\_runtimes) | Compatible version of python to use defaults to 3.8 | `list(string)` | <pre>[<br>  "python3.8"<br>]</pre> | no |
 | <a name="input_email_admin_report_enabled"></a> [email\_admin\_report\_enabled](#input\_email\_admin\_report\_enabled) | Used to enable or disable the SES emailed report | `bool` | `false` | no |
 | <a name="input_email_admin_report_subject"></a> [email\_admin\_report\_subject](#input\_email\_admin\_report\_subject) | Subject of the report email that is sent | `string` | `null` | no |
+| <a name="input_email_banner_message"></a> [email\_banner\_message](#input\_email\_banner\_message) | Messages that will be at the top of all emails sent to notify recipients of important information | `string` | `""` | no |
+| <a name="input_email_banner_message_color"></a> [email\_banner\_message\_color](#input\_email\_banner\_message\_color) | Color of email banner message, must be valid html color | `string` | `"red"` | no |
 | <a name="input_email_tag"></a> [email\_tag](#input\_email\_tag) | Tag to be placed on the IAM user that we can use to notify when their key is going to be disabled/deleted | `string` | `"keyenforcer:email"` | no |
 | <a name="input_log_level"></a> [log\_level](#input\_log\_level) | Log level for lambda | `string` | `"INFO"` | no |
 | <a name="input_s3_bucket"></a> [s3\_bucket](#input\_s3\_bucket) | Bucket name to write the audit report to if s3\_enabled is set to 'true' | `string` | `null` | no |
