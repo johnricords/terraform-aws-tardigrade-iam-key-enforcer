@@ -448,7 +448,6 @@ def email_user(client_ses, subject, html, email_targets):
 def process_message(html_body, event):
     """Generate HTML and send report to email_targets list for tenant \
     account and ADMIN_EMAIL via SES."""
-
     html_header = (
         "<html>"
         f"{_get_banner_html()}"
