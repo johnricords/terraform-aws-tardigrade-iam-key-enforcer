@@ -37,6 +37,7 @@ module "iam_key_enforcer" {
   email_admin_report_subject = "Test IAM Key Enforcement Report"
   email_source               = var.email_source
   email_banner_message       = "IAM Key Enforcement will be armed on 07/01/2022"
+  email_banner_message_color = "red"
   admin_email                = var.admin_email
   key_age_warning            = var.key_age_warning
   key_age_inactive           = var.key_age_inactive

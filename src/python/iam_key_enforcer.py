@@ -93,6 +93,7 @@ S3_ENABLED = os.environ.get("S3_ENABLED", "False").lower() == "true"
 S3_BUCKET = os.environ.get("S3_BUCKET", None)
 EMAIL_TAG = os.environ.get("EMAIL_TAG", "keyenforcer:email").lower()
 EMAIL_BANNER_MSG = os.environ.get("EMAIL_BANNER_MSG", "").strip()
+EMAIL_BANNER_MSG_COLOR = os.environ.get("EMAIL_BANNER_MSG_COLOR", "black").strip()
 
 # Get the Lambda session
 SESSION = boto3.Session()
@@ -375,15 +376,9 @@ def get_email_html(user_name, access_key_id, key_age, action):
     return (
         "<html>"
         f"{_get_banner_html()}"
-        f"<h1>Expiring Access Key Report for {user_name} </h1>"
-        f"<p>The following access key {access_key_id} is over {key_age} days old "
-        f"and has been {action}.</p>"
-        "<table>"
-        "<tr><td><b>IAM User Name</b></td>"
-        "<td><b>Access Key ID</b></td>"
-        "<td><b>Key Age</b></td>"
-        "<td><b>Key Status</b></td>"
-        "<td><b>Last Used</b></td></tr></table></html>"
+        f"<h2>Expiring Access Key Report for {user_name}</h2>"
+        f"<p>The access key {access_key_id} is over {key_age} days old "
+        f"and has been {action}.</p></html>"
     )
 
 
@@ -457,8 +452,8 @@ def process_message(html_body, event):
     html_header = (
         "<html>"
         f"{_get_banner_html()}"
-        "<h1>Expiring Access Key Report for "
-        f'{event["account_number"]} - {event["account_name"]}</h1>'
+        "<h2>Expiring Access Key Report for "
+        f'{event["account_number"]} - {event["account_name"]}</h2>'
         f"<p>The following access keys are over {KEY_AGE_WARNING} days old "
         f"and will soon be marked inactive ({KEY_AGE_INACTIVE} days) "
         f"and deleted ({KEY_AGE_DELETE} days).</p>"
@@ -533,7 +528,7 @@ def _get_banner_html():
     if not EMAIL_BANNER_MSG:
         return ""
 
-    return f"<h1>{EMAIL_BANNER_MSG}</h1>"
+    return f"<h1 style='color:{EMAIL_BANNER_MSG_COLOR};'>{EMAIL_BANNER_MSG}</h1>"
 
 
 def object_age(last_changed):
