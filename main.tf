@@ -151,7 +151,7 @@ data "aws_iam_policy_document" "iam_key" {
       "iam:ListGroupsForUser",
       "iam:UpdateAccessKey",
       "iam:ListAccessKeys",
-      "iam:ListUser*",
+      "iam:ListUserTags",
     ]
 
     resources = [
