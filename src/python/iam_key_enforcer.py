@@ -333,10 +333,18 @@ def delete_access_key(access_key_id, user_name, client, client_ses, event):
 
     if event["email_user_enabled"]:
         email_targets = get_email_targets(client, user_name, event)
-        email_html = get_email_html(user_name, access_key_id, KEY_AGE_DELETE, "deleted")
+        email_html = get_email_html(
+            user_name, access_key_id, KEY_AGE_DELETE, "deleted", event
+        )
+
+        if event["armed"]:
+            subject = f"IAM User Key has been deleted for {user_name}"
+        else:
+            subject = f"IAM User Key is marked for deletion for {user_name}"
+
         email_user(
             client_ses,
-            f"IAM User Key Deleted for {user_name}",
+            f"{subject}",
             email_html,
             email_targets,
         )
@@ -358,11 +366,17 @@ def disable_access_key(access_key_id, user_name, client, client_ses, event):
     if event["email_user_enabled"]:
         email_targets = get_email_targets(client, user_name, event)
         email_html = get_email_html(
-            user_name, access_key_id, KEY_AGE_INACTIVE, "disabled"
+            user_name, access_key_id, KEY_AGE_INACTIVE, "disabled", event
         )
+
+        if event["armed"]:
+            subject = f"IAM User Key has been marked 'Inactive' for {user_name}"
+        else:
+            subject = f"IAM User Key would be marked 'Inactive' for {user_name}"
+
         email_user(
             client_ses,
-            f"IAM User Key Disabled for {user_name}",
+            f"{subject}",
             email_html,
             email_targets,
         )
@@ -371,12 +385,16 @@ def disable_access_key(access_key_id, user_name, client, client_ses, event):
         log.info("Email not enabled per environment variable setting")
 
 
-def get_email_html(user_name, access_key_id, key_age, action):
+def get_email_html(user_name, access_key_id, key_age, action, event):
+
+    unarmed_message = "" if event["armed"] else _get_unarmed_message_html()
+
     """Get the html for the email."""
     return (
         "<html>"
         f"{_get_banner_html()}"
         f"<h2>Expiring Access Key Report for {user_name}</h2>"
+        f"{unarmed_message}"
         f"<p>The access key {access_key_id} is over {key_age} days old "
         f"and has been {action}.</p></html>"
     )
@@ -448,16 +466,24 @@ def email_user(client_ses, subject, html, email_targets):
 def process_message(html_body, event):
     """Generate HTML and send report to email_targets list for tenant \
     account and ADMIN_EMAIL via SES."""
+
+    exempt_groups_message = (
+        ""
+        if event["exempt_groups"]
+        else _get_exempt_groups_message_html(event["exempt_groups"])
+    )
+
+    unarmed_message = "" if event["armed"] else _get_unarmed_message_html()
+
     html_header = (
         "<html>"
         f"{_get_banner_html()}"
         "<h2>Expiring Access Key Report for "
         f'{event["account_number"]} - {event["account_name"]}</h2>'
+        f"{unarmed_message}"
         f"<p>The following access keys are over {KEY_AGE_WARNING} days old "
         f"and will soon be marked inactive ({KEY_AGE_INACTIVE} days) "
-        f"and deleted ({KEY_AGE_DELETE} days).</p>"
-        f"<p>Grayed out rows are exempt via membership in an IAM Group(s): "
-        f'{", ".join(event["exempt_groups"])}</p>'
+        f"and deleted ({KEY_AGE_DELETE} days).</p>{exempt_groups_message}"
         "<table>"
         "<tr><td><b>IAM User Name</b></td>"
         "<td><b>Access Key ID</b></td>"
@@ -528,6 +554,22 @@ def _get_banner_html():
         return ""
 
     return f"<h1 style='color:{EMAIL_BANNER_MSG_COLOR};'>{EMAIL_BANNER_MSG}</h1>"
+
+
+def _get_unarmed_message_html():
+    return (
+        '<h3 style="color:red">The IAM Key Enforcer is not active and '
+        "NO action has been taken on your key</h3>"
+        "<p>The information below is for informational purposes and represents the "
+        "results if the IAM Key Enforcer were active</p>"
+    )
+
+
+def _get_exempt_groups_message_html(groups):
+    return (
+        f"<p>Grayed out rows are exempt via membership in an IAM Group(s): "
+        f'{", ".join(groups)}</p>'
+    )
 
 
 def object_age(last_changed):
