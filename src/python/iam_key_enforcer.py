@@ -386,10 +386,9 @@ def disable_access_key(access_key_id, user_name, client, client_ses, event):
 
 
 def get_email_html(user_name, access_key_id, key_age, action, event):
-
+    """Get the html for the email."""
     unarmed_message = "" if event["armed"] else _get_unarmed_message_html()
 
-    """Get the html for the email."""
     return (
         "<html>"
         f"{_get_banner_html()}"
