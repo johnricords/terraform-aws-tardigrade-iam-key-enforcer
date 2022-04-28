@@ -32,6 +32,18 @@ variable "email_source" {
   type        = string
 }
 
+variable "email_banner_message" {
+  description = "Messages that will be at the top of all emails sent to notify recipients of important information"
+  type        = string
+  default     = ""
+}
+
+variable "email_banner_message_color" {
+  description = "Color of email banner message, must be valid html color"
+  type        = string
+  default     = "red"
+}
+
 variable "email_tag" {
   description = "Tag to be placed on the IAM user that we can use to notify when their key is going to be disabled/deleted"
   type        = string

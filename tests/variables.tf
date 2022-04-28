@@ -62,7 +62,8 @@ variable "exempt_groups" {
   default = [
     "sample-group",
     "test-group",
-    "other-group"
+    "other-group",
+    "service-accounts"
   ]
 }
 

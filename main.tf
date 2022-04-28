@@ -55,6 +55,8 @@ module "lambda" {
     S3_ENABLED                 = var.s3_enabled
     S3_BUCKET                  = var.s3_bucket
     EMAIL_TAG                  = var.email_tag
+    EMAIL_BANNER_MSG           = var.email_banner_message
+    EMAIL_BANNER_MSG_COLOR     = var.email_banner_message_color
   }
 
   source_path = [
@@ -148,7 +150,8 @@ data "aws_iam_policy_document" "iam_key" {
       "iam:DeleteAccessKey",
       "iam:ListGroupsForUser",
       "iam:UpdateAccessKey",
-      "iam:ListAccessKeys"
+      "iam:ListAccessKeys",
+      "iam:ListUserTags",
     ]
 
     resources = [
