@@ -1,3 +1,7 @@
+data "aws_partition" "current" {}
+data "aws_region" "current" {}
+data "aws_caller_identity" "this" {}
+
 resource "aws_cloudwatch_event_rule" "this" {
   name                = var.event_name
   description         = var.event_rule_description
@@ -8,7 +12,7 @@ resource "aws_cloudwatch_event_rule" "this" {
 
 resource "aws_cloudwatch_event_target" "this" {
   event_bus_name = var.event_bus_name
-  arn            = var.lambda_arn
+  arn            = "arn:${data.aws_partition.current.partition}:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.this.account_id}:function:${var.lambda_name}"
   rule           = aws_cloudwatch_event_rule.this.name
 
   dynamic "input_transformer" {

@@ -13,6 +13,9 @@ No requirements.
 
 | Name | Type |
 |------|------|
+| [aws_caller_identity.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
+| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 
 ## Inputs
 
@@ -20,7 +23,6 @@ No requirements.
 |------|-------------|------|---------|:--------:|
 | <a name="input_event_name"></a> [event\_name](#input\_event\_name) | Name of the event | `string` | n/a | yes |
 | <a name="input_event_rule_description"></a> [event\_rule\_description](#input\_event\_rule\_description) | Description of what the event rule does | `string` | n/a | yes |
-| <a name="input_lambda_arn"></a> [lambda\_arn](#input\_lambda\_arn) | ARN of the target lambda | `string` | n/a | yes |
 | <a name="input_lambda_name"></a> [lambda\_name](#input\_lambda\_name) | Name of the target lambda | `string` | n/a | yes |
 | <a name="input_dead_letter_config"></a> [dead\_letter\_config](#input\_dead\_letter\_config) | Configuration of the dead letter queue | <pre>object({<br>    arn = string<br>  })</pre> | `null` | no |
 | <a name="input_event_bus_name"></a> [event\_bus\_name](#input\_event\_bus\_name) | EventBridge event bus | `string` | `"default"` | no |

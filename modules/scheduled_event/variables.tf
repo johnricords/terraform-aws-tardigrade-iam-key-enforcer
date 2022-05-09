@@ -19,11 +19,6 @@ variable "lambda_name" {
   type        = string
 }
 
-variable "lambda_arn" {
-  description = "ARN of the target lambda"
-  type        = string
-}
-
 variable "schedule_expression" {
   description = "Schedule Expression for scheduled event"
   type        = string

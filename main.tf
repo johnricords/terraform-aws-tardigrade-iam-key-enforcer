@@ -198,7 +198,6 @@ module "scheduled_events" {
 
   event_name             = "${var.project_name}-${each.value.account_name}"
   event_rule_description = "Scheduled Event that runs IAM Key Enforcer Lambda for account ${each.value.account_number} - ${each.value.account_name}"
-  lambda_arn             = module.lambda.lambda_function_arn
   lambda_name            = module.lambda.lambda_function_name
   schedule_expression    = var.schedule_expression
   input_transformer = {
