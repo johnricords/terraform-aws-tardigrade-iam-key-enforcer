@@ -70,7 +70,8 @@ module "lambda" {
     }
   ]
 
-  build_in_docker = false
+  build_in_docker          = false
+  recreate_missing_package = false
 }
 
 
