@@ -3,7 +3,7 @@ include {
 }
 
 terraform {
-  source = "git::https://github.com/plus3it/terraform-aws-codecommit-flow-ci.git//modules/branch?ref=4.3.0"
+  source = "git::https://github.com/plus3it/terraform-aws-codecommit-flow-ci.git//modules/branch?ref=4.3.3"
 }
 
 inputs = {
