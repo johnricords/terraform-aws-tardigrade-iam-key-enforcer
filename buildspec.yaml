@@ -1,15 +1,14 @@
 version: 0.2
 
 env:
+  git-credential-helper: yes
   parameter-store:
     DOCKERHUB_PASSWORD: /codebuild/dockerhub/readonly/password
     DOCKERHUB_USERNAME: /codebuild/dockerhub/readonly/username
-  git-credential-helper: yes
+    GITHUB_ACCESS_TOKEN: /codebuild/github/readonly/token
 
 phases:
   install:
-    runtime-versions:
-      python: 3.8
     commands:
       - mkdir -p "$HOME/bin"
       - export PATH="$HOME/bin:$PATH"
