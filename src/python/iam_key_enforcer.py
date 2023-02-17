@@ -424,7 +424,6 @@ def get_email_targets(client, user_name, event):
 
 
 def _validate_email(email, email_type):
-
     if not email or not re.fullmatch(email_regex, email):
         log.error(
             "Invalid %s email found - email: %s",
