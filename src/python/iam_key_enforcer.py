@@ -103,6 +103,10 @@ email_regex = re.compile(
 )
 
 
+class IamKeyEnforcerError(Exception):
+    """All errors raised by IamKeyEnforcer Lambda."""
+
+
 def lambda_handler(event, context):  # pylint: disable=unused-argument
     """Audit Access Key Age.
 
@@ -162,7 +166,7 @@ def generate_credential_report(client_iam, report_counter, max_attempts=5):
 
     throttle_error = "Credential report generation throttled - exit"
     log.error(throttle_error)
-    raise Exception(throttle_error)
+    raise IamKeyEnforcerError(throttle_error)
 
 
 def get_credential_report(client_iam):
@@ -290,7 +294,9 @@ def process_users(
                     "</tr>"
                 )
             else:
-                raise Exception(f"Unhandled case for Access Key {key['AccessKeyId']}")
+                raise IamKeyEnforcerError(
+                    f"Unhandled case for Access Key {key['AccessKeyId']}"
+                )
             html_body += line
 
             # Log it
@@ -424,7 +430,6 @@ def get_email_targets(client, user_name, event):
 
 
 def _validate_email(email, email_type):
-
     if not email or not re.fullmatch(email_regex, email):
         log.error(
             "Invalid %s email found - email: %s",
