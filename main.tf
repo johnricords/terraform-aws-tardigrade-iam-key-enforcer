@@ -33,15 +33,21 @@ data "aws_iam_policy_document" "lambda" {
 module "lambda" {
   source = "git::https://github.com/terraform-aws-modules/terraform-aws-lambda.git?ref=v4.12.1"
 
-  function_name       = "${var.project_name}-iam-key-enforcer"
-  description         = "Lambda function for Key Enforcement"
-  handler             = "iam_key_enforcer.lambda_handler"
-  attach_policy_json  = true
-  policy_json         = data.aws_iam_policy_document.lambda.json
-  runtime             = "python3.8"
+  build_in_docker     = false
   compatible_runtimes = var.compatible_python_runtimes
-  timeout             = 300
+  description         = "Lambda function for Key Enforcement"
+  function_name       = "${var.project_name}-iam-key-enforcer"
+  handler             = "iam_key_enforcer.lambda_handler"
+  runtime             = "python3.8"
   tags                = var.tags
+  timeout             = 300
+
+  attach_policy_json = true
+  policy_json        = data.aws_iam_policy_document.lambda.json
+
+  ignore_source_code_hash  = true
+  recreate_missing_package = false
+
   environment_variables = {
     LOG_LEVEL                  = var.log_level
     EMAIL_ADMIN_REPORT_ENABLED = var.email_admin_report_enabled
@@ -63,15 +69,13 @@ module "lambda" {
     {
       path          = "${path.module}/src/python",
       prefix_in_zip = ""
+      patterns      = ["!\\.terragrunt-source-manifest"]
     },
     {
       pip_requirements = "${path.module}/src/requirements.txt",
       prefix_in_zip    = ""
     }
   ]
-
-  build_in_docker          = false
-  recreate_missing_package = false
 }
 
 
