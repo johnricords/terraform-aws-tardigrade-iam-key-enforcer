@@ -96,7 +96,7 @@ resource "aws_sqs_queue_policy" "this" {
           Action    = "sqs:SendMessage",
           Resource  = aws_sqs_queue.this.arn,
           Condition = {
-            "ArnEquals" : {
+            "ArnLike" : {
               "aws:SourceArn" : "arn:${data.aws_partition.current.partition}:events:*:*:rule/${var.project_name}*"
             }
           }
@@ -105,9 +105,7 @@ resource "aws_sqs_queue_policy" "this" {
           Sid    = "AllowRead",
           Effect = "Allow",
           "Principal" : {
-            "AWS" : [
-              data.aws_caller_identity.current.account_id
-            ]
+            "AWS" : "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"
           },
           Action   = "sqs:ReceiveMessage",
           Resource = aws_sqs_queue.this.arn,
