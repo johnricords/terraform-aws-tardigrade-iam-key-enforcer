@@ -1,5 +1,6 @@
 data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
+data "aws_region" "current" {}
 
 data "aws_iam_policy_document" "lambda" {
   statement {
@@ -76,6 +77,14 @@ module "lambda" {
       prefix_in_zip    = ""
     }
   ]
+}
+
+
+resource "aws_lambda_permission" "this" {
+  action        = "lambda:InvokeFunction"
+  function_name = module.lambda.lambda_function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = "arn:${data.aws_partition.current.partition}:events:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:rule/${var.project_name}-*"
 }
 
 
@@ -201,7 +210,7 @@ module "scheduled_events" {
 
   event_name             = "${var.project_name}-${each.value.account_name}"
   event_rule_description = "Scheduled Event that runs IAM Key Enforcer Lambda for account ${each.value.account_number} - ${each.value.account_name}"
-  lambda_name            = module.lambda.lambda_function_name
+  lambda_arn             = module.lambda.lambda_function_arn
   schedule_expression    = var.schedule_expression
   input_transformer = {
     input_template = jsonencode({
@@ -219,4 +228,3 @@ module "scheduled_events" {
     arn = aws_sqs_queue.this.arn
   }
 }
-
