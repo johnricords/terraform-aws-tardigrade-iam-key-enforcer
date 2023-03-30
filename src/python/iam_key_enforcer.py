@@ -268,20 +268,6 @@ def process_users(
                     f"<td>{str(last_used_date)}</td>"
                     "</tr>"
                 )
-            elif key_age >= KEY_AGE_DELETE and exempted and key["Status"] == "Inactive":
-                # EXEMPT: Delete if Inactive
-                delete_access_key(
-                    access_key_id, user_name, client_iam, client_ses, event
-                )
-                line = (
-                    '<tr bgcolor= "#E6B0AA">'
-                    f"<td>{user_name}</td>"
-                    f'<td>{key["AccessKeyId"]}</td>'
-                    f"<td>{str(key_age)}</td>"
-                    "<td>DELETED</td>"
-                    f"<td>{str(last_used_date)}</td>"
-                    "</tr>"
-                )
             elif exempted:
                 # EXEMPT: Report
                 line = (
