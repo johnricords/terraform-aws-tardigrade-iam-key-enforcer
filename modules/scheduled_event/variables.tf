@@ -14,8 +14,8 @@ variable "event_name" {
   type        = string
 }
 
-variable "lambda_name" {
-  description = "Name of the target lambda"
+variable "lambda_arn" {
+  description = "ARN of the target lambda"
   type        = string
 }
 
