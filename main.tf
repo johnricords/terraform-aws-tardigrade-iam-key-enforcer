@@ -32,7 +32,7 @@ data "aws_iam_policy_document" "lambda" {
 }
 
 module "lambda" {
-  source = "git::https://github.com/terraform-aws-modules/terraform-aws-lambda.git?ref=v4.13.0"
+  source = "git::https://github.com/terraform-aws-modules/terraform-aws-lambda.git?ref=v4.14.0"
 
   build_in_docker     = false
   compatible_runtimes = var.compatible_python_runtimes
