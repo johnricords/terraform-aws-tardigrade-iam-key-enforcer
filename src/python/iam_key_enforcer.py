@@ -130,7 +130,7 @@ def lambda_handler(event, context):  # pylint: disable=unused-argument
     log.debug(SESSION.client("sts").get_caller_identity()["Arn"])
 
     # do stuff with the assumed role using assumed_role_session
-    log.debug(assumed_role_session.client("sts").get_caller_identity()["Arn"])
+    log.debug("IAM Key Enforce account arn %s", assumed_role_session.client("sts").get_caller_identity()["Arn"])
 
     client_iam = assumed_role_session.client("iam")
     client_ses = SESSION.client("ses")
@@ -144,8 +144,11 @@ def lambda_handler(event, context):  # pylint: disable=unused-argument
     # Process Users in Credential Report
     body = process_users(client_iam, client_ses, event, report)
 
-    # Process message for SES
-    process_message(body, event)
+    if body:
+        # Process message for SES
+        process_message(body, event)
+    else:
+        log.info("No expiring access keys for account arn %s", assumed_role_session.client("sts").get_caller_identity()["Arn"])
 
 
 def generate_credential_report(client_iam, report_counter, max_attempts=5):
@@ -195,6 +198,8 @@ def process_users(
 
         # Test group exempted
         exempted = is_exempted(client_iam, user_name, event)
+        if exempted:
+            continue
 
         # Process Access Keys for user
         access_keys = client_iam.list_access_keys(UserName=user_name)
@@ -208,7 +213,7 @@ def process_users(
             # last_used_date value will not exist if key not used
             last_used_date = get_key["AccessKeyLastUsed"].get("LastUsedDate")
 
-            if not last_used_date and key_age >= KEY_USE_THRESHOLD and not exempted:
+            if not last_used_date and key_age >= KEY_USE_THRESHOLD:
                 # Key has not been used and has exceeded age threshold
                 # NOT EXEMPT: Delete unused
                 delete_access_key(
@@ -229,7 +234,7 @@ def process_users(
             if key_age < KEY_AGE_WARNING:
                 continue
 
-            if key_age >= KEY_AGE_DELETE and not exempted:
+            if key_age >= KEY_AGE_DELETE:
                 # NOT EXEMPT: Delete
                 delete_access_key(
                     access_key_id, user_name, client_iam, client_ses, event
@@ -243,7 +248,7 @@ def process_users(
                     f"<td>{str(last_used_date)}</td>"
                     "</tr>"
                 )
-            elif key_age >= KEY_AGE_INACTIVE and not exempted:
+            elif key_age >= KEY_AGE_INACTIVE:
                 # NOT EXEMPT: Disable
                 disable_access_key(
                     access_key_id, user_name, client_iam, client_ses, event
@@ -257,7 +262,7 @@ def process_users(
                     f"<td>{str(last_used_date)}</td>"
                     "</tr>"
                 )
-            elif not exempted:
+            else:
                 # NOT EXEMPT: Report
                 line = (
                     '<tr bgcolor= "#FFFFFF">'
@@ -267,21 +272,6 @@ def process_users(
                     f'<td>{key["Status"]}</td>'
                     f"<td>{str(last_used_date)}</td>"
                     "</tr>"
-                )
-            elif exempted:
-                # EXEMPT: Report
-                line = (
-                    '<tr bgcolor= "#D7DBDD">'
-                    f"<td>{user_name}</td>"
-                    f'<td>{key["AccessKeyId"]}</td>'
-                    f"<td>{str(key_age)}</td>"
-                    f'<td>{key["Status"]}</td>'
-                    f"<td>{str(last_used_date)}</td>"
-                    "</tr>"
-                )
-            else:
-                raise IamKeyEnforcerError(
-                    f"Unhandled case for Access Key {key['AccessKeyId']}"
                 )
             html_body += line
 
@@ -293,8 +283,7 @@ def process_users(
                 str(key_age),
                 key["Status"],
             )
-    if str(html_body) == "":
-        html_body = "All Access Keys for this account are compliant."
+
     return html_body
 
 
@@ -315,13 +304,12 @@ def is_exempted(client_iam, user_name, event):
 
 def delete_access_key(access_key_id, user_name, client, client_ses, event):
     """Delete Access Key."""
-    log.info("Deleting AccessKeyId %s for user %s", access_key_id, user_name)
 
     if event["armed"]:
+        log.info("Armed: Deleting AccessKeyId %s for user %s", access_key_id, user_name)
         client.delete_access_key(UserName=user_name, AccessKeyId=access_key_id)
-
     else:
-        log.info("Not armed, no action taken")
+        log.info("Not Armed: Deleting AccessKeyId %s for user %s", access_key_id, user_name)
 
     if event["email_user_enabled"]:
         email_targets = get_email_targets(client, user_name, event)
@@ -346,14 +334,16 @@ def delete_access_key(access_key_id, user_name, client, client_ses, event):
 
 def disable_access_key(access_key_id, user_name, client, client_ses, event):
     """Disable Access Key."""
-    log.info("Disabling AccessKeyId %s for user %s", access_key_id, user_name)
+
 
     if event["armed"]:
+        log.info("Armed: Disabling AccessKeyId %s for user %s", access_key_id, user_name)
         client.update_access_key(
             UserName=user_name, AccessKeyId=access_key_id, Status="Inactive"
         )
     else:
-        log.info("Not armed, no action taken")
+        log.info("Not Armed: Disabling AccessKeyId %s for user %s", access_key_id, user_name)
+
 
     if event["email_user_enabled"]:
         email_targets = get_email_targets(client, user_name, event)
@@ -556,7 +546,7 @@ def _get_unarmed_message_html():
 
 def _get_exempt_groups_message_html(groups):
     return (
-        f"<p>Grayed out rows are exempt via membership in an IAM Group(s): "
+        f"<p>Members in the follwing exempted IAM Group(s) are not included in this report: "
         f'{", ".join(groups)}</p>'
     )
 
