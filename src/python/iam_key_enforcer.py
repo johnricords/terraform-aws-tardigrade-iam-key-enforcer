@@ -218,22 +218,8 @@ def process_users(
             # last_used_date value will not exist if key not used
             last_used_date = get_key["AccessKeyLastUsed"].get("LastUsedDate")
 
-            if exempted:
-                line = (
-                    '<tr bgcolor= "#D7DBDD">'
-                    f"<td>{user_name}</td>"
-                    f'<td>{key["AccessKeyId"]}</td>'
-                    f"<td>{str(key_age)}</td>"
-                    f'<td>{key["Status"]} (Exempt)</td>'
-                    f"<td>{str(last_used_date)}</td>"
-                    "</tr>"
-                )
-                html_body += line
-                continue
-
-            if not last_used_date and key_age >= KEY_USE_THRESHOLD:
+            if not exempted and not last_used_date and key_age >= KEY_USE_THRESHOLD:
                 # Key has not been used and has exceeded age threshold
-                # NOT EXEMPT: Delete unused
                 delete_access_key(
                     access_key_id, user_name, client_iam, client_ses, event
                 )
@@ -251,6 +237,19 @@ def process_users(
 
             # Process keys older than warning threshold
             if key_age < KEY_AGE_WARNING:
+                continue
+
+            if exempted:
+                line = (
+                    '<tr bgcolor= "#D7DBDD">'
+                    f"<td>{user_name}</td>"
+                    f'<td>{key["AccessKeyId"]}</td>'
+                    f"<td>{str(key_age)}</td>"
+                    f'<td>{key["Status"]} (Exempt)</td>'
+                    f"<td>{str(last_used_date)}</td>"
+                    "</tr>"
+                )
+                html_body += line
                 continue
 
             if key_age >= KEY_AGE_DELETE:
@@ -475,8 +474,8 @@ def process_message(html_body, event):
         "<h2>Expiring Access Key Report for "
         f'{event["account_number"]} - {event["account_name"]}</h2>'
         f"{unarmed_message}"
-        f"<p>The following list contains all access keys by user (including compliant and exempted groups user's keys) for account {event['account_number']}."
-        f"<br>Access keys that are over {KEY_AGE_WARNING} days old will soon be marked INACTIVE, "
+        f"<p>The following list contains access keys by user for account {event['account_number']} that will soon INACTIVE or DELETED."
+        f"<br>Access keys and are over {KEY_AGE_WARNING} days old will soon be marked INACTIVE, "
         f"those over {KEY_AGE_INACTIVE} days have been marked INACTIVE and will soon be DELETED, and keys over "
         f"{KEY_AGE_DELETE} days have been deleted.</p>"
         f"{exempt_groups_message}"
