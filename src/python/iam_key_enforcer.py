@@ -474,7 +474,7 @@ def process_message(html_body, event):
         "<h2>Expiring Access Key Report for "
         f'{event["account_number"]} - {event["account_name"]}</h2>'
         f"{unarmed_message}"
-        f"<p>The following list contains access keys by user for account {event['account_number']} that will soon INACTIVE or DELETED."
+        f"<p>The following list contains access keys by user for account {event['account_number']} that will soon be marked INACTIVE or DELETED."
         f"<br>Access keys and are over {KEY_AGE_WARNING} days old will soon be marked INACTIVE, "
         f"those over {KEY_AGE_INACTIVE} days have been marked INACTIVE and will soon be DELETED, and keys over "
         f"{KEY_AGE_DELETE} days have been deleted.</p>"
