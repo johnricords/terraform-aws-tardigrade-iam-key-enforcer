@@ -126,14 +126,9 @@ def lambda_handler(event, context):  # pylint: disable=unused-argument
         SESSION, role_arn, RoleSessionName=role_session_name
     )
 
-    # do stuff with the Lambda role using SESSION
-    log.debug(SESSION.client("sts").get_caller_identity()["Arn"])
-
+    assumed_acct_arn = assumed_role_session.client("sts").get_caller_identity()["Arn"]
     # do stuff with the assumed role using assumed_role_session
-    log.debug(
-        "IAM Key Enforce account arn %s",
-        assumed_role_session.client("sts").get_caller_identity()["Arn"],
-    )
+    log.debug("IAM Key Enforce account arn %s", assumed_acct_arn)
 
     client_iam = assumed_role_session.client("iam")
     client_ses = SESSION.client("ses")
@@ -151,10 +146,7 @@ def lambda_handler(event, context):  # pylint: disable=unused-argument
         # Process message for SES
         process_message(body, event)
     else:
-        log.info(
-            "No expiring access keys for account arn %s",
-            assumed_role_session.client("sts").get_caller_identity()["Arn"],
-        )
+        log.info("No expiring access keys for account arn %s", assumed_acct_arn)
 
 
 def generate_credential_report(client_iam, report_counter, max_attempts=5):
