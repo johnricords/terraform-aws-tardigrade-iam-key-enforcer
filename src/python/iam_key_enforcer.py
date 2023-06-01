@@ -192,6 +192,7 @@ def process_users(
         log.debug("Processing user: %s", user_name)
 
         if user_name == "<root_account>":
+            log.debug("Skipping user: %s", user_name)
             continue
 
         # Test group exempted
@@ -403,6 +404,7 @@ def get_email_targets(client, user_name, event):
     for tag in tags["Tags"]:
         if tag["Key"].lower() == EMAIL_TAG:
             email = tag["Value"]
+            break
 
     email_targets = []
 
@@ -411,10 +413,16 @@ def get_email_targets(client, user_name, event):
 
     for email_target in event["email_targets"]:
         if _validate_email(email_target, "target"):
-            email_targets.append(email_target)
+            if not event["debug"]:
+                email_targets.append(email_target)
+            else:
+                log.debug("Debug Mode: Append email target %s", email_target)
 
     if _validate_email(email, f"user ({user_name})"):
-        email_targets.append(email)
+        if not event["debug"]:
+            email_targets.append(email)
+        else:
+            log.debug("Debug Mode: Append user email %s", email)
 
     return email_targets
 

@@ -10,6 +10,7 @@ tardigrade-ci/
 .terraform
 terraform.tfstate
 terraform.tfstate.backup
+terraform.tfvars
 
 # python caches
 __pycache__/

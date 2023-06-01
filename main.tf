@@ -39,7 +39,7 @@ module "lambda" {
   description         = "Lambda function for Key Enforcement"
   function_name       = "${var.project_name}-iam-key-enforcer"
   handler             = "iam_key_enforcer.lambda_handler"
-  runtime             = "python3.8"
+  runtime             = "python3.9"
   tags                = var.tags
   timeout             = 300
 
@@ -218,6 +218,7 @@ module "scheduled_events" {
       "account_name" : each.value.account_name,
       "role_arn" : "arn:${data.aws_partition.current.partition}:iam::${each.value.account_number}:role/${each.value.role_name}",
       "armed" : each.value.armed,
+      "debug" : each.value.debug,
       "email_targets" : each.value.email_targets,
       "exempt_groups" : each.value.exempt_groups,
       "email_user_enabled" : each.value.email_user_enabled,

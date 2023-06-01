@@ -94,6 +94,7 @@ variable "accounts" {
     account_number     = string
     role_name          = string
     armed              = bool
+    debug              = optional(bool, false)
     email_user_enabled = bool
     email_targets      = list(string)
     exempt_groups      = list(string)
