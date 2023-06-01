@@ -564,7 +564,7 @@ def _get_unarmed_message_html():
         '<h3 style="color:red">The IAM Key Enforcer is not active and '
         "NO action has been taken on your key</h3>"
         "<p>The information below is for informational purposes and represents the "
-        "results if the IAM Key Enforcer were active</p>"
+        "results if the IAM Key Enforcer were active.</p>"
     )
 
 
@@ -572,7 +572,7 @@ def _get_exempt_groups_message_html(groups):
     return (
         f"<p>Grayed out rows are exempt via membership in an exempt IAM Group(s): "
         f'{", ".join(groups)}'
-        ". <br/>Exempted members also have a key status value of <STATUS> (Exempt)"
+        ". <br/>Exempted members also have a key status value of <STATUS> (Exempt)."
         "</p>"
     )
 
