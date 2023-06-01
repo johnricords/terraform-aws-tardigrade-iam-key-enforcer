@@ -482,8 +482,10 @@ def process_message(html_body, event):
         "<h2>Expiring Access Key Report for "
         f'{event["account_number"]} - {event["account_name"]}</h2>'
         f"{unarmed_message}"
-        f"<p>Access Keys over {KEY_AGE_INACTIVE} days old have been DEACTIVATED, keys older than {KEY_AGE_DELETE} days have been DELETED. "
-        f"Access keys over {KEY_AGE_WARNING} days old are DEACTIVATED at {KEY_AGE_INACTIVE} days old "
+        f"<p>Access Keys over {KEY_AGE_INACTIVE} days old have been DEACTIVATED, "
+        f"keys older than {KEY_AGE_DELETE} days have been DELETED. "
+        f"Access keys over {KEY_AGE_WARNING} days old are DEACTIVATED"
+        f"at {KEY_AGE_INACTIVE} days old "
         f"and DELETED after {KEY_AGE_DELETE} days old. "
         f"Rotate any keys as necessary to prevent disruption to your applications.</p>"
         f"{exempt_groups_message}"
