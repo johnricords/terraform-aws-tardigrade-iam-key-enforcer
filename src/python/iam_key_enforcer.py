@@ -315,7 +315,6 @@ def is_exempted(client_iam, user_name, event):
 
 def delete_access_key(access_key_id, user_name, client, client_ses, event):
     """Delete Access Key."""
-
     if event["armed"]:
         log.info("Armed: Deleting AccessKeyId %s for user %s", access_key_id, user_name)
         client.delete_access_key(UserName=user_name, AccessKeyId=access_key_id)
@@ -347,7 +346,6 @@ def delete_access_key(access_key_id, user_name, client, client_ses, event):
 
 def disable_access_key(access_key_id, user_name, client, client_ses, event):
     """Disable Access Key."""
-
     if event["armed"]:
         log.info(
             "Armed: Disabling AccessKeyId %s for user %s", access_key_id, user_name
