@@ -572,7 +572,7 @@ def _get_exempt_groups_message_html(groups):
     return (
         f"<p>Grayed out rows are exempt via membership in an exempt IAM Group(s): "
         f'{", ".join(groups)}'
-        "Exempted members also have a key status value of <STATUS> (Exempt)"
+        ". <br/>Exempted members also have a key status value of <STATUS> (Exempt)"
         "</p>"
     )
 
