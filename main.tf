@@ -34,20 +34,28 @@ data "aws_iam_policy_document" "lambda" {
 module "lambda" {
   source = "git::https://github.com/terraform-aws-modules/terraform-aws-lambda.git?ref=v4.18.0"
 
-  build_in_docker     = false
   compatible_runtimes = var.compatible_python_runtimes
   description         = "Lambda function for Key Enforcement"
   function_name       = "${var.project_name}-iam-key-enforcer"
   handler             = "iam_key_enforcer.lambda_handler"
-  runtime             = "python3.9"
   tags                = var.tags
-  timeout             = 300
 
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda.json
 
-  ignore_source_code_hash  = true
-  recreate_missing_package = false
+  artifacts_dir            = var.lambda.artifacts_dir
+  build_in_docker          = var.lambda.build_in_docker
+  create_package           = var.lambda.create_package
+  ignore_source_code_hash  = var.lambda.ignore_source_code_hash
+  local_existing_package   = var.lambda.local_existing_package
+  recreate_missing_package = var.lambda.recreate_missing_package
+  ephemeral_storage_size   = var.lambda.ephemeral_storage_size
+  runtime                  = var.lambda.runtime
+  s3_bucket                = var.lambda.s3_bucket
+  s3_existing_package      = var.lambda.s3_existing_package
+  s3_prefix                = var.lambda.s3_prefix
+  store_on_s3              = var.lambda.store_on_s3
+  timeout                  = var.lambda.timeout
 
   environment_variables = {
     LOG_LEVEL                  = var.log_level
@@ -70,7 +78,7 @@ module "lambda" {
     {
       path          = "${path.module}/src/python",
       prefix_in_zip = ""
-      patterns      = ["!\\.terragrunt-source-manifest"]
+      patterns      = var.lambda.source_path.patterns
     },
     {
       pip_requirements = "${path.module}/src/requirements.txt",
