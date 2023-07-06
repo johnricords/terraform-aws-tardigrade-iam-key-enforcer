@@ -12,6 +12,7 @@ data "aws_iam_policy_document" "lambda" {
     ]
     resources = ["arn:${data.aws_partition.current.partition}:s3:::${var.s3_bucket}/*"]
   }
+
   statement {
     actions = [
       "ses:SendEmail"
@@ -20,6 +21,7 @@ data "aws_iam_policy_document" "lambda" {
       "*"
     ]
   }
+
   statement {
     sid = "AllowAssumeRole"
     actions = [
@@ -87,17 +89,11 @@ module "lambda" {
   ]
 }
 
-
 resource "aws_lambda_permission" "this" {
   action        = "lambda:InvokeFunction"
   function_name = module.lambda.lambda_function_name
   principal     = "events.amazonaws.com"
   source_arn    = "arn:${data.aws_partition.current.partition}:events:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:rule/${var.project_name}-*"
-}
-
-
-locals {
-  has_accounts = length(var.accounts) > 0 ? 1 : 0
 }
 
 ##############################
@@ -148,78 +144,22 @@ resource "aws_sqs_queue" "this" {
 }
 
 ##############################
-# Policy
-##############################
-data "aws_iam_policy_document" "iam_key" {
-  count = local.has_accounts
-  statement {
-    actions = [
-      "iam:GenerateCredentialReport",
-      "iam:GetCredentialReport",
-      "iam:ListUsers",
-      "iam:GetAccessKeyLastUsed"
-    ]
-
-    resources = [
-      "*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "iam:DeleteAccessKey",
-      "iam:ListGroupsForUser",
-      "iam:UpdateAccessKey",
-      "iam:ListAccessKeys",
-      "iam:ListUserTags",
-    ]
-
-    resources = [
-      "arn:${data.aws_partition.current.partition}:iam::*:user/*"
-    ]
-  }
-}
-
-resource "aws_iam_policy" "iam_policy" {
-  count = local.has_accounts
-  name  = "${var.project_name}-iam-key-enforcer-iam-policy"
-
-  policy = data.aws_iam_policy_document.iam_key[0].json
-}
-
-resource "aws_iam_role" "assume_role" {
-  count = local.has_accounts
-  name  = var.assume_role_name
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        "Sid" : "AssumeRoleCrossAccount",
-        "Effect" : "Allow",
-        "Principal" : {
-          "AWS" : "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"
-        },
-        "Action" : "sts:AssumeRole"
-      }
-    ]
-  })
-  managed_policy_arns = [aws_iam_policy.iam_policy[0].arn]
-}
-
-
-
-##############################
-# Schedule Event for testing
+# Schedule Event
 ##############################
 module "scheduled_events" {
-  source = "./modules/scheduled_event"
-
+  source   = "./modules/scheduled_event"
   for_each = { for account in var.accounts : account.account_name => account }
 
   event_name             = "${var.project_name}-${each.value.account_name}"
   event_rule_description = "Scheduled Event that runs IAM Key Enforcer Lambda for account ${each.value.account_number} - ${each.value.account_name}"
   lambda_arn             = module.lambda.lambda_function_arn
   schedule_expression    = var.schedule_expression
+  tags                   = var.tags
+
+  dead_letter_config = {
+    arn = aws_sqs_queue.this.arn
+  }
+
   input_transformer = {
     input_template = jsonencode({
       "account_number" : each.value.account_number,
@@ -231,9 +171,5 @@ module "scheduled_events" {
       "exempt_groups" : each.value.exempt_groups,
       "email_user_enabled" : each.value.email_user_enabled,
     })
-  }
-  tags = var.tags
-  dead_letter_config = {
-    arn = aws_sqs_queue.this.arn
   }
 }
