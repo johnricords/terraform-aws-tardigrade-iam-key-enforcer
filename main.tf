@@ -164,7 +164,7 @@ module "scheduled_events" {
     input_template = jsonencode({
       "account_number" : each.value.account_number,
       "account_name" : each.value.account_name,
-      "role_arn" : "arn:${data.aws_partition.current.partition}:iam::${each.value.account_number}:role/${each.value.role_name}",
+      "role_arn" : "arn:${data.aws_partition.current.partition}:iam::${each.value.account_number}:role/${var.assume_role_name}",
       "armed" : each.value.armed,
       "debug" : each.value.debug,
       "email_targets" : each.value.email_targets,

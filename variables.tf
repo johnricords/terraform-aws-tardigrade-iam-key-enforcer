@@ -92,7 +92,7 @@ variable "accounts" {
   type = list(object({
     account_name       = string
     account_number     = string
-    role_name          = string
+    role_name          = optional(string) # deprecated
     armed              = bool
     debug              = optional(bool, false)
     email_user_enabled = bool
