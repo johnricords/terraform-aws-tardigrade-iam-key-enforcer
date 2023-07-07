@@ -38,7 +38,7 @@ module "lambda" {
 
   compatible_runtimes = var.compatible_python_runtimes
   description         = "Lambda function for Key Enforcement"
-  function_name       = "${var.project_name}-iam-key-enforcer"
+  function_name       = var.project_name
   handler             = "iam_key_enforcer.lambda_handler"
   tags                = var.tags
 
@@ -114,7 +114,7 @@ resource "aws_sqs_queue_policy" "this" {
           Resource  = aws_sqs_queue.this.arn,
           Condition = {
             "ArnLike" : {
-              "aws:SourceArn" : "arn:${data.aws_partition.current.partition}:events:*:*:rule/${var.project_name}*"
+              "aws:SourceArn" : "arn:${data.aws_partition.current.partition}:events:*:*:rule/${var.project_name}-*"
             }
           }
         },
@@ -136,7 +136,7 @@ resource "aws_sqs_queue_policy" "this" {
 # SQS Queue
 ##############################
 resource "aws_sqs_queue" "this" {
-  name                       = "${var.project_name}-iam-key-enforcer-dlq"
+  name                       = "${var.project_name}-dlq"
   message_retention_seconds  = 1209600
   receive_wait_time_seconds  = 20
   visibility_timeout_seconds = 30

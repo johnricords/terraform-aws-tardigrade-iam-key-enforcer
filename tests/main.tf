@@ -50,7 +50,7 @@ module "iam_key_enforcer" {
 }
 
 resource "aws_s3_bucket" "this" {
-  bucket        = "${local.project}-iam-key-enforcer-test-bucket"
+  bucket        = "${local.project}-bucket"
   tags          = local.tags
   force_destroy = true
 
@@ -94,13 +94,13 @@ data "aws_iam_policy_document" "iam_key" {
 }
 
 resource "aws_iam_policy" "iam_policy" {
-  name = "${local.project}-iam-key-enforcer-iam-policy"
+  name = "${local.project}-policy"
 
   policy = data.aws_iam_policy_document.iam_key.json
 }
 
 resource "aws_iam_role" "assume_role" {
-  name                = "${local.project}-iam-key-enforcer-role"
+  name                = "${local.project}-role"
   managed_policy_arns = [aws_iam_policy.iam_policy.arn]
 
   assume_role_policy = jsonencode({
