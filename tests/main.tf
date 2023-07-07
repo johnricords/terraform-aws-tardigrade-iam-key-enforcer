@@ -33,24 +33,24 @@ module "iam_key_enforcer" {
   key_use_threshold          = var.key_use_threshold
   s3_enabled                 = var.s3_enabled
   s3_bucket                  = aws_s3_bucket.this.id
+  tags                       = local.tags
+
   accounts = [
     {
-      account_name       = var.account_name
-      account_number     = data.aws_caller_identity.current.account_id
-      armed              = false
-      debug              = true
-      email_user_enabled = true
-      email_targets      = [var.email_target]
-      exempt_groups      = var.exempt_groups
+      account_name        = var.account_name
+      account_number      = data.aws_caller_identity.current.account_id
+      armed               = false
+      debug               = true
+      email_user_enabled  = true
+      email_targets       = [var.email_target]
+      exempt_groups       = var.exempt_groups
+      schedule_expression = "rate(5 minutes)"
     }
   ]
-  schedule_expression = "rate(5 minutes)"
-
-  tags = local.tags
 }
 
 resource "aws_s3_bucket" "this" {
-  bucket        = "${local.project}-iam-key-enforcer-test-bucket"
+  bucket        = "${local.project}-bucket"
   tags          = local.tags
   force_destroy = true
 
@@ -94,13 +94,13 @@ data "aws_iam_policy_document" "iam_key" {
 }
 
 resource "aws_iam_policy" "iam_policy" {
-  name = "${local.project}-iam-key-enforcer-iam-policy"
+  name = "${local.project}-policy"
 
   policy = data.aws_iam_policy_document.iam_key.json
 }
 
 resource "aws_iam_role" "assume_role" {
-  name                = "${local.project}-iam-key-enforcer-role"
+  name                = "${local.project}-role"
   managed_policy_arns = [aws_iam_policy.iam_policy.arn]
 
   assume_role_policy = jsonencode({

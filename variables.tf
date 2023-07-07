@@ -1,6 +1,7 @@
 variable "project_name" {
   description = "Project name to prefix resources with"
   type        = string
+  default     = "iam-key-enforcer"
 }
 
 variable "compatible_python_runtimes" {
@@ -90,14 +91,15 @@ variable "s3_bucket" {
 variable "accounts" {
   description = "List of account objects to create events for"
   type = list(object({
-    account_name       = string
-    account_number     = string
-    role_name          = optional(string) # deprecated
-    armed              = bool
-    debug              = optional(bool, false)
-    email_user_enabled = bool
-    email_targets      = list(string)
-    exempt_groups      = list(string)
+    account_name        = string
+    account_number      = string
+    role_name           = optional(string) # deprecated
+    armed               = bool
+    debug               = optional(bool, false)
+    email_user_enabled  = bool
+    email_targets       = list(string)
+    exempt_groups       = list(string)
+    schedule_expression = optional(string, "cron(0 1 ? * SUN *)")
   }))
   default = []
 }
@@ -126,9 +128,9 @@ variable "lambda" {
 }
 
 variable "schedule_expression" {
-  description = "Schedule Expressions for Rules"
+  description = "(DEPRECATED) Schedule Expressions for Rules"
   type        = string
-  default     = "cron(0 1 ? * SUN *)"
+  default     = null
 }
 
 variable "log_level" {
