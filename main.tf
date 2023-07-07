@@ -153,7 +153,7 @@ module "scheduled_events" {
   event_name             = "${var.project_name}-${each.value.account_name}"
   event_rule_description = "Scheduled Event that runs IAM Key Enforcer Lambda for account ${each.value.account_number} - ${each.value.account_name}"
   lambda_arn             = module.lambda.lambda_function_arn
-  schedule_expression    = var.schedule_expression
+  schedule_expression    = var.schedule_expression != null ? var.schedule_expression : each.value.schedule_expression
   tags                   = var.tags
 
   dead_letter_config = {
