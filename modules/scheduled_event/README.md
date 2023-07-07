@@ -27,6 +27,7 @@
 | <a name="input_dead_letter_config"></a> [dead\_letter\_config](#input\_dead\_letter\_config) | Configuration of the dead letter queue | <pre>object({<br>    arn = string<br>  })</pre> | `null` | no |
 | <a name="input_event_bus_name"></a> [event\_bus\_name](#input\_event\_bus\_name) | EventBridge event bus | `string` | `"default"` | no |
 | <a name="input_input_transformer"></a> [input\_transformer](#input\_input\_transformer) | Transform to apply on the event input | <pre>object({<br>    input_template = string<br>  })</pre> | `null` | no |
+| <a name="input_project_name"></a> [project\_name](#input\_project\_name) | Project name to prefix resources with | `string` | `"iam-key-enforcer"` | no |
 | <a name="input_schedule_expression"></a> [schedule\_expression](#input\_schedule\_expression) | Schedule Expression for scheduled event | `string` | `"cron(0 0 * * 1 *)"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to add to the module resources | `map(string)` | `{}` | no |
 

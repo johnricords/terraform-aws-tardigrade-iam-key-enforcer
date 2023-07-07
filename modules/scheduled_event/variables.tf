@@ -19,6 +19,12 @@ variable "lambda_arn" {
   type        = string
 }
 
+variable "project_name" {
+  description = "Project name to prefix resources with"
+  type        = string
+  default     = "iam-key-enforcer"
+}
+
 variable "schedule_expression" {
   description = "Schedule Expression for scheduled event"
   type        = string

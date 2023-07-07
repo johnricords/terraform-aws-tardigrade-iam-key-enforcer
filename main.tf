@@ -150,9 +150,10 @@ module "scheduled_events" {
   source   = "./modules/scheduled_event"
   for_each = { for account in var.accounts : account.account_name => account }
 
-  event_name             = "${var.project_name}-${each.value.account_name}"
+  event_name             = each.value.account_name
   event_rule_description = "Scheduled Event that runs IAM Key Enforcer Lambda for account ${each.value.account_number} - ${each.value.account_name}"
   lambda_arn             = module.lambda.lambda_function_arn
+  project_name           = var.project_name
   schedule_expression    = var.schedule_expression != null ? var.schedule_expression : each.value.schedule_expression
   tags                   = var.tags
 

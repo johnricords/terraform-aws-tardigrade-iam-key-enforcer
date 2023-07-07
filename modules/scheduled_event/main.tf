@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_event_rule" "this" {
-  name                = var.event_name
+  name                = "${var.project_name}-${var.event_name}"
   description         = var.event_rule_description
   tags                = var.tags
   event_bus_name      = var.event_bus_name
