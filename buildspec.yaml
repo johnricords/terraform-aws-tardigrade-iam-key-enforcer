@@ -1,7 +1,7 @@
 version: 0.2
 
 env:
-  git-credential-helper: yes
+  git-credential-helper: true
   parameter-store:
     DOCKERHUB_PASSWORD: /codebuild/dockerhub/readonly/password
     DOCKERHUB_USERNAME: /codebuild/dockerhub/readonly/username
