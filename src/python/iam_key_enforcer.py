@@ -411,13 +411,13 @@ def get_email_targets(client, user_name, event):
 
     for email_target in event["email_targets"]:
         if _validate_email(email_target, "target"):
-            if not event["debug"]:
+            if not event.get("debug"):
                 email_targets.append(email_target)
             else:
                 log.debug("Debug Mode: Append email target %s", email_target)
 
     if _validate_email(email, f"user ({user_name})"):
-        if not event["debug"]:
+        if not event.get("debug"):
             email_targets.append(email)
         else:
             log.debug("Debug Mode: Append user email %s", email)
