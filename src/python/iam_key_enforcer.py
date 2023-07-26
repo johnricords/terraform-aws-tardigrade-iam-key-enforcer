@@ -299,7 +299,7 @@ def delete_access_key(access_key_id, user_name, client_iam, event):
             event,
         )
     else:
-        log.info("Email User not enabled per environment variable setting")
+        log.info("Email User not enabled per event email_user_enabled variable setting")
 
 
 def disable_access_key(access_key_id, user_name, client_iam, event):
@@ -335,7 +335,7 @@ def disable_access_key(access_key_id, user_name, client_iam, event):
             event,
         )
     else:
-        log.info("Email User not enabled per environment variable setting")
+        log.info("Email User not enabled per event email_user_enabled variable setting")
 
 
 def email_user(client_iam, user_key_details, event):
