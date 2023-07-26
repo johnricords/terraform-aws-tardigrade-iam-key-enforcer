@@ -419,12 +419,12 @@ def get_user_email(client_iam, user_name, event):
 
 
 def log_invalid_email(email_type, email):
-    """Log error for invalid email and specify the type"""
+    """Log error for invalid email and specify the type."""
     log.error("Invalid %s email found - email: %s", email_type, email)
 
 
 def validate_email(email):
-    """Validate email provided matches regex"""
+    """Validate email provided matches regex."""
     if not email or not re.fullmatch(email_regex, email):
         return False
 
@@ -479,7 +479,6 @@ def optional_email_template_data(event, exempt_groups=None):
 def store_and_email_report(key_report_contents, event):
     """Generate HTML and send report to email_targets list for tenant \
     account and ADMIN_EMAIL via SES."""
-
     if not S3_ENABLED:
         log.info("S3 report not enabled per setting")
 
