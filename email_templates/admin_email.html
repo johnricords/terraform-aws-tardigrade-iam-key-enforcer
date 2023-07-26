@@ -1,0 +1,49 @@
+{{#if EMAIL_BANNER_MSG}}
+{{EMAIL_BANNER_MSG}}
+{{/if}}
+
+<h2>Expiring Access Key Report for {{account_number}} - {{account_name}}</h2>
+
+{{#if UNARMED}}
+<h3 style="color:red">
+    The IAM Key Enforcer is not active and NO action has been taken on your key
+</h3>
+<p>
+    The information below is for informational purposes and represents the results if the IAM Key Enforcer were active.
+</p>
+{{/if}}
+
+<p>
+    Access Keys over {{KEY_AGE_INACTIVE}} days old have been DEACTIVATED,
+    keys older than {{KEY_AGE_DELETE}} days have been DELETED.
+    Access keys over {{KEY_AGE_WARNING}} days old are DEACTIVATED
+    at {{KEY_AGE_INACTIVE}} days old and DELETED after {{KEY_AGE_DELETE}} days old.
+    Rotate any keys as necessary to prevent disruption to your applications.
+</p>
+
+{{#if exempt_groups}}
+<p>
+    Grayed out rows are exempt via membership in an exempt IAM Group(s):{{exempt_groups}}.
+    <br />
+    Exempted group members also have a key status value of <STATUS> (Exempt).
+</p>
+{{/if}}
+
+<table>
+    <tr>
+        <td><b>IAM User Name</b></td>
+        <td><b>Access Key ID</b></td>
+        <td><b>Key Age</b></td>
+        <td><b>Key Status</b></td>
+        <td><b>Last Used</b></td>
+    </tr>
+    {{#each table_contents}}
+        <tr bgcolor="{{bg_color}}">
+            <td>{{user_name}}</td>
+            <td>{{access_key_id}}</td>
+            <td>{{key_age}}</td>
+            <td>{{key_status}}</td>
+            <td>{{last_used_date}}</td>
+        </tr>
+    {{/each}}
+</table>

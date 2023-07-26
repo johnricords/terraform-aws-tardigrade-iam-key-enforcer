@@ -74,6 +74,8 @@ module "lambda" {
     EMAIL_TAG                  = var.email_tag
     EMAIL_BANNER_MSG           = var.email_banner_message
     EMAIL_BANNER_MSG_COLOR     = var.email_banner_message_color
+    EMAIL_USER_TEMPLATE        = aws_ses_template.user_template.id
+    EMAIL_ADMIN_TEMPLATE       = aws_ses_template.user_template.id
   }
 
   source_path = [
@@ -173,4 +175,18 @@ module "scheduled_events" {
       "email_user_enabled" : each.value.email_user_enabled,
     })
   }
+}
+
+resource "aws_ses_template" "user_template" {
+  name    = "${var.project_name}-user"
+  subject = "{{subject}}"
+  html    = file("${path.module}/email_templates/user_email.html")
+  text    = file("${path.module}/email_templates/user_email.txt")
+}
+
+resource "aws_ses_template" "admin_template" {
+  name    = "${var.project_name}-admin"
+  subject = "{{subject}}"
+  html    = file("${path.module}/email_templates/admin_email.html")
+  text    = file("${path.module}/email_templates/admin_email.txt")
 }
