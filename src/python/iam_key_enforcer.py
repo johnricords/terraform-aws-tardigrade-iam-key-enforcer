@@ -392,12 +392,15 @@ def get_event_email_targets(event):
     email_targets = []
     for email_target in event["email_targets"]:
         if validate_email(email_target):
-            if not event.get("debug"):
-                email_targets.append(email_target)
-            else:
-                log.debug("Debug Mode: Append email target %s", email_target)
+            email_targets.append(email_target)
         else:
             log_invalid_email("target", email_target)
+
+    # if mode is debug we do not want to email the actual targets
+    # log whatever targets there were and return an empty list
+    if event.get("debug") and email_targets:
+        log.debug("Debug Mode:Event email targets %s", ", ".join(email_targets))
+        return []
     return email_targets
 
 
@@ -516,6 +519,7 @@ def store_in_s3(account_number, template_data):
     email_contents = response.get("RenderedTemplate", None)
 
     if email_contents:
+        log.debug("Storing report to S3 key %s Report Details: %s", s3_key, email_contents)
         response = CLIENT_S3.put_object(
             Bucket=S3_BUCKET, Key=s3_key, Body=email_contents
         )
