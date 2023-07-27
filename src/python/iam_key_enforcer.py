@@ -406,11 +406,15 @@ def get_event_email_targets(event):
 def get_user_email(client_iam, user_name, event):
     """Get and validate user email from Key Tags."""
     tags = client_iam.list_user_tags(UserName=user_name)
-    email = ""
+    email = None
     for tag in tags["Tags"]:
         if tag["Key"].lower() == EMAIL_TAG:
             email = tag["Value"]
             break
+
+    if not email:
+        log.debug("No email found for user %s", user_name)
+        return None
 
     if validate_email(email):
         if not event.get("debug"):
