@@ -39,8 +39,8 @@ module "iam_key_enforcer" {
   email_templates = {
     admin = {
       html    = file("${path.module}/email_templates/admin_email.html")
-      subject = file("${path.module}/email_templates/admin_email.txt")
-      text    = "IAM Key Enforcement Report for {{account_number}}"
+      subject = "IAM Key Enforcement Report for {{account_number}}"
+      text    = file("${path.module}/email_templates/admin_email.txt")
     }
     user = {
       html    = file("${path.module}/email_templates/user_email.html")

@@ -8,7 +8,6 @@
     The IAM Key Enforcer is not active and NO action has been taken on your key
 
     The information below is for informational purposes and represents the results if the IAM Key Enforcer were active.
-
 {{/if}}
 
 Access Keys over {{key_age_inactive}} days old have been DEACTIVATED, keys older than {{key_age_delete}} days have been DELETED.
