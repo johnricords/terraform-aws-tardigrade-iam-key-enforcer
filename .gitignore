@@ -17,3 +17,6 @@ __pycache__/
 
 # build dirs
 **/builds
+
+# ide
+.vscode
