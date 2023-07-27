@@ -1,5 +1,5 @@
-{{#if EMAIL_BANNER_MSG}}
-{{EMAIL_BANNER_MSG}}
+{{#if email_banner_msg}}
+{{email_banner_msg}}
 {{/if}}
 
 Expiring Access Key Report for {{user_name}}

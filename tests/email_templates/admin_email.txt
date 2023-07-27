@@ -1,20 +1,20 @@
-{{#if EMAIL_BANNER_MSG}}
-<h1 style="color:{{EMAIL_BANNER_MSG_COLOR}}">{{EMAIL_BANNER_MSG}}</h1>
+{{#if email_banner_msg}}
+{{email_banner_msg}}
 {{/if}}
 
 <h2>Expiring Access Key Report for {{account_number}} - {{account_name}}</h2>
 
-{{#if UNARMED}}
+{{#if unarmed}}
     The IAM Key Enforcer is not active and NO action has been taken on your key
 
     The information below is for informational purposes and represents the results if the IAM Key Enforcer were active.
 
 {{/if}}
 
-Access Keys over {{KEY_AGE_INACTIVE}} days old have been DEACTIVATED,
-keys older than {{KEY_AGE_DELETE}} days have been DELETED.
-Access keys over {{KEY_AGE_WARNING}} days old are DEACTIVATED
-at {{KEY_AGE_INACTIVE}} days old and DELETED after {{KEY_AGE_DELETE}} days old.
+Access Keys over {{key_age_inactive}} days old have been DEACTIVATED,
+keys older than {{key_age_delete}} days have been DELETED.
+Access keys over {{key_age_warning}} days old are DEACTIVATED
+at {{key_age_inactive}} days old and DELETED after {{key_age_delete}} days old.
 Rotate any keys as necessary to prevent disruption to your applications.
 
 
