@@ -519,7 +519,9 @@ def store_in_s3(account_number, template_data):
     email_contents = response.get("RenderedTemplate", None)
 
     if email_contents:
-        log.debug("Storing report to S3 key %s Report Details: %s", s3_key, email_contents)
+        log.debug(
+            "Storing report to S3 key %s Report Details: %s", s3_key, email_contents
+        )
         response = CLIENT_S3.put_object(
             Bucket=S3_BUCKET, Key=s3_key, Body=email_contents
         )
