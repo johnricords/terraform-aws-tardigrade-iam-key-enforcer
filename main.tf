@@ -77,7 +77,7 @@ module "lambda" {
     EMAIL_BANNER_MSG           = var.email_banner_message
     EMAIL_BANNER_MSG_COLOR     = var.email_banner_message_color
     EMAIL_USER_TEMPLATE        = aws_ses_template.user_template.id
-    EMAIL_ADMIN_TEMPLATE       = aws_ses_template.user_template.id
+    EMAIL_ADMIN_TEMPLATE       = aws_ses_template.admin_template.id
   }
 
   source_path = [
