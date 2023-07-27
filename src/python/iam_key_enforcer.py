@@ -18,6 +18,8 @@ Environment Variables:
             valid input: critical, error, warning, info (default), debug
     EMAIL_ADMIN_REPORT_ENABLED: used to enable or disable the SES emailed report
     EMAIL_SOURCE: send from address for the email, authorized in SES
+    EMAIL_USER_TEMPLATE: Name of the SES template for user emails
+    EMAIL_ADMIN_TEMPLATE: Name of the SES template for admin emails
     KEY_AGE_DELETE: age at which a key should be deleted (e.g. 120)
     KEY_AGE_INACTIVE: age at which a key should be inactive (e.g. 90)
     KEY_AGE_WARNING: age at which to warn (e.g. 75)
