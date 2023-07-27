@@ -14,10 +14,10 @@
 {{/if}}
 
 <p>
-    Access Keys over {{key_age_inactive}} days old have been DEACTIVATED,
-    keys older than {{key_age_delete}} days have been DELETED.
-    Access keys over {{key_age_warning}} days old are DEACTIVATED
-    at {{key_age_inactive}} days old and DELETED after {{key_age_delete}} days old.
+    Access Keys over {{key_age_inactive}} days old have been DEACTIVATED, keys older than {{key_age_delete}} days have
+    been DELETED.
+    Access keys over {{key_age_warning}} days old are DEACTIVATED at {{key_age_inactive}} days old and DELETED after
+    {{key_age_delete}} days old.
     Rotate any keys as necessary to prevent disruption to your applications.
 </p>
 
@@ -37,7 +37,7 @@
         <td><b>Key Status</b></td>
         <td><b>Last Used</b></td>
     </tr>
-    {{#each table_contents}}
+    {{#each key_report_contents}}
     <tr bgcolor="{{bg_color}}">
         <td>{{user_name}}</td>
         <td>{{access_key_id}}</td>

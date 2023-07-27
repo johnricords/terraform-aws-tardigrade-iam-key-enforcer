@@ -247,7 +247,7 @@ def process_credential_report(
 
             key_report_contents.append(
                 {
-                    "bgcolor": bg_color,
+                    "bg_color": bg_color,
                     "user_name": user_name,
                     "access_key_id": key["AccessKeyId"],
                     "key_age": str(key_age),
