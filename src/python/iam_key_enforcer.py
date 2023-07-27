@@ -204,7 +204,7 @@ def process_credential_report(
 
             # Log it
             log.info(
-                "%s \t %s \t %s \t %s",
+                "User Key Details: %s \t %s \t %s \t %s",
                 user_name,
                 key["AccessKeyId"],
                 str(key_age),
