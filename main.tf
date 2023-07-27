@@ -15,7 +15,8 @@ data "aws_iam_policy_document" "lambda" {
 
   statement {
     actions = [
-      "ses:SendEmail"
+      "ses:SendEmail",
+      "ses:SendTemplatedEmail"
     ]
     resources = [
       "*"
