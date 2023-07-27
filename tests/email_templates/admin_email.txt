@@ -11,10 +11,8 @@
 
 {{/if}}
 
-Access Keys over {{key_age_inactive}} days old have been DEACTIVATED,
-keys older than {{key_age_delete}} days have been DELETED.
-Access keys over {{key_age_warning}} days old are DEACTIVATED
-at {{key_age_inactive}} days old and DELETED after {{key_age_delete}} days old.
+Access Keys over {{key_age_inactive}} days old have been DEACTIVATED, keys older than {{key_age_delete}} days have been DELETED.
+Access keys over {{key_age_warning}} days old are DEACTIVATED at {{key_age_inactive}} days old and DELETED after {{key_age_delete}} days old.
 Rotate any keys as necessary to prevent disruption to your applications.
 
 
@@ -24,6 +22,6 @@ Rotate any keys as necessary to prevent disruption to your applications.
 {{/if}}
 
 IAM User Name, Access Key ID, Key Age, Key Status, Last Used
-{{#each table_contents}}
+{{#each key_report_contents}}
     {{user_name}}, {{access_key_id}}, {{key_age}}, {{key_status}}, {{last_used_date}}
 {{/each}}
