@@ -18,7 +18,6 @@ Environment Variables:
             valid input: critical, error, warning, info (default), debug
     EMAIL_ADMIN_REPORT_ENABLED: used to enable or disable the SES emailed report
     EMAIL_SOURCE: send from address for the email, authorized in SES
-    EMAIL_ADMIN_REPORT_SUBJECT: subject line for the email
     KEY_AGE_DELETE: age at which a key should be deleted (e.g. 120)
     KEY_AGE_INACTIVE: age at which a key should be inactive (e.g. 90)
     KEY_AGE_WARNING: age at which to warn (e.g. 75)
@@ -458,7 +457,6 @@ def user_email_template_data(user_email_details, event):
         "access_key_id": user_email_details["access_key_id"],
         "action": user_email_details["action"],
         "key_age": user_email_details["key_age"],
-        "subject": user_email_details["subject"],
         "user_name": user_email_details["user_name"],
     }
     template_data.update(optional_email_template_data(event))
