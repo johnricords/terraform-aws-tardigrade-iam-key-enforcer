@@ -40,6 +40,7 @@ Event Variables:
 import collections
 import csv
 import io
+import json
 import logging
 import os
 import re
@@ -274,7 +275,7 @@ def delete_access_key(access_key_id, user_name, client_iam, event):
     if event["armed"]:
         armed_log_prefix = ARMED_PREFIX
     log.info(
-        "%s: Deleting AccessKeyId %s for user %s",
+        "%s Deleting AccessKeyId %s for user %s",
         armed_log_prefix,
         access_key_id,
         user_name,
@@ -515,7 +516,7 @@ def store_in_s3(account_number, template_data):
     )
 
     response = CLIENT_SES.test_render_template(
-        TemplateName=EMAIL_ADMIN_TEMPLATE, TemplateData=template_data
+        TemplateName=EMAIL_ADMIN_TEMPLATE, TemplateData=json.dumps(template_data)
     )
 
     email_contents = response.get("RenderedTemplate", None)
@@ -547,7 +548,7 @@ def send_email(template, template_data, email_targets):
             "ToAddresses": email_targets,
         },
         Template=template,
-        TemplateData=template_data,
+        TemplateData=json.dumps(template_data),
     )
 
     log.info("Email Sent Successfully. Message ID: %s", response["MessageId"])
