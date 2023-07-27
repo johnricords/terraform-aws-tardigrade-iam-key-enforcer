@@ -36,6 +36,7 @@ The function audits each user in an account for access keys and determines how l
 |------|-------------|------|---------|:--------:|
 | <a name="input_admin_email"></a> [admin\_email](#input\_admin\_email) | Admin Email that will receive all emails and reports about actions taken if email is enabled | `string` | n/a | yes |
 | <a name="input_email_source"></a> [email\_source](#input\_email\_source) | Email that will be used to send messages | `string` | n/a | yes |
+| <a name="input_email_templates"></a> [email\_templates](#input\_email\_templates) | Email templates to use for Admin and User emails | <pre>object({<br>    admin = object({<br>      subject = string,<br>      html    = string,<br>      text    = string,<br>    }),<br>    user = object({<br>      subject = string,<br>      html    = string,<br>      text    = string,<br>    })<br>  })</pre> | n/a | yes |
 | <a name="input_key_age_delete"></a> [key\_age\_delete](#input\_key\_age\_delete) | Age at which a key should be deleted (e.g. 120) | `number` | n/a | yes |
 | <a name="input_key_age_inactive"></a> [key\_age\_inactive](#input\_key\_age\_inactive) | Age at which a key should be inactive (e.g. 90) | `number` | n/a | yes |
 | <a name="input_key_age_warning"></a> [key\_age\_warning](#input\_key\_age\_warning) | Age at which to warn (e.g. 75) | `number` | n/a | yes |
