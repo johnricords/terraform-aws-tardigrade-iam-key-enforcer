@@ -27,14 +27,14 @@ module "iam_key_enforcer" {
       email_user_enabled  = true
       email_targets       = [var.email_target]
       exempt_groups       = var.exempt_groups
-      schedule_expression = "rate(5 minutes)"
+      schedule_expression = "rate(10 minutes)"
     }
   ]
   assume_role_name           = aws_iam_role.assume_role.name
   admin_email                = var.admin_email
   email_admin_report_enabled = true
   email_source               = var.email_source
-  email_banner_message       = "IAM Key Enforcement was armed on 07/01/2022"
+  email_banner_message       = "IAM Key Enforcement will be armed on 07/31/2023"
   email_banner_message_color = "red"
   email_templates = {
     admin = {
