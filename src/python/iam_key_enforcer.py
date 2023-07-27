@@ -83,7 +83,7 @@ ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
 EMAIL_ADMIN_REPORT_ENABLED = (
     os.environ.get("EMAIL_ADMIN_REPORT_ENABLED", "False").lower() == "true"
 )
-EMAIL_ADMIN_REPORT_SUBJECT = os.environ.get("EMAIL_ADMIN_REPORT_SUBJECT")
+
 EMAIL_SOURCE = os.environ.get("EMAIL_SOURCE")
 KEY_AGE_WARNING = int(os.environ.get("KEY_AGE_WARNING", 75))
 KEY_AGE_INACTIVE = int(os.environ.get("KEY_AGE_INACTIVE", 90))
@@ -273,15 +273,15 @@ def delete_access_key(access_key_id, user_name, client_iam, event):
     """Delete Access Key."""
     armed_log_prefix = NOT_ARMED_PREFIX
     if event["armed"]:
-        client_iam.delete_access_key(UserName=user_name, AccessKeyId=access_key_id)
         armed_log_prefix = ARMED_PREFIX
-
     log.info(
         "%s: Deleting AccessKeyId %s for user %s",
         armed_log_prefix,
         access_key_id,
         user_name,
     )
+    if event["armed"]:
+        client_iam.delete_access_key(UserName=user_name, AccessKeyId=access_key_id)
 
     if event["email_user_enabled"]:
         armed_state_msg = (
@@ -290,7 +290,7 @@ def delete_access_key(access_key_id, user_name, client_iam, event):
         email_user(
             client_iam,
             {
-                "subject": f"IAM User Key {armed_state_msg} for {user_name}",
+                "armed_state_msg": armed_state_msg,
                 "access_key_id": access_key_id,
                 "action": "deleted",
                 "key_age": KEY_AGE_DELETE,
@@ -306,11 +306,7 @@ def disable_access_key(access_key_id, user_name, client_iam, event):
     """Disable Access Key."""
     armed_log_prefix = NOT_ARMED_PREFIX
     if event["armed"]:
-        client_iam.update_access_key(
-            UserName=user_name, AccessKeyId=access_key_id, Status="Inactive"
-        )
         armed_log_prefix = ARMED_PREFIX
-
     log.info(
         "%s Disabling AccessKeyId %s for user %s",
         armed_log_prefix,
@@ -318,15 +314,21 @@ def disable_access_key(access_key_id, user_name, client_iam, event):
         user_name,
     )
 
+    if event["armed"]:
+        client_iam.update_access_key(
+            UserName=user_name, AccessKeyId=access_key_id, Status="Inactive"
+        )
+
     if event["email_user_enabled"]:
-        armed_state_msg = "has been" if event["armed"] else "would be"
+        armed_state_msg = (
+            "has been marked 'Inactive'"
+            if event["armed"]
+            else "would be marked 'Inactive'"
+        )
         email_user(
             client_iam,
             {
-                "subject": (
-                    f"IAM User Key {armed_state_msg} "
-                    f"marked 'Inactive' for {user_name}"
-                ),
+                "armed_state_msg": armed_state_msg,
                 "access_key_id": access_key_id,
                 "action": "disabled",
                 "key_age": KEY_AGE_INACTIVE,
@@ -431,9 +433,25 @@ def validate_email(email):
     return True
 
 
+def admin_email_template_data(key_report_contents, event, exempt_groups):
+    """Build email template data for admin emails."""
+    template_data = {
+        "account_number": event["account_number"],
+        "account_name": event["account_name"],
+        "key_report_contents": key_report_contents,
+        "key_age_inactive": KEY_AGE_INACTIVE,
+        "key_age_delete": KEY_AGE_DELETE,
+        "key_age_warning": KEY_AGE_WARNING,
+    }
+
+    template_data.update(optional_email_template_data(event, exempt_groups))
+    return template_data
+
+
 def user_email_template_data(user_email_details, event):
     """Build email template data for user emails."""
     template_data = {
+        "armed_state_msg": user_email_details["armed_state_msg"],
         "access_key_id": user_email_details["access_key_id"],
         "action": user_email_details["action"],
         "key_age": user_email_details["key_age"],
@@ -444,31 +462,15 @@ def user_email_template_data(user_email_details, event):
     return template_data
 
 
-def admin_email_template_data(subject, key_report_contents, event, exempt_groups):
-    """Build email template data for admin emails."""
-    template_data = {
-        "account_number": event["account_number"],
-        "account_name": event["account_name"],
-        "subject": subject,
-        "key_report_contents": key_report_contents,
-        "KEY_AGE_INACTIVE": KEY_AGE_INACTIVE,
-        "KEY_AGE_DELETE": KEY_AGE_DELETE,
-        "KEY_AGE_WARNING": KEY_AGE_WARNING,
-    }
-
-    template_data.update(optional_email_template_data(event, exempt_groups))
-    return template_data
-
-
 def optional_email_template_data(event, exempt_groups=None):
     """Set and return optional email template data."""
     template_data = {}
     if EMAIL_BANNER_MSG:
-        template_data["EMAIL_BANNER_MSG"] = EMAIL_BANNER_MSG
-        template_data["EMAIL_BANNER_MSG_COLOR"] = EMAIL_BANNER_MSG_COLOR
+        template_data["email_banner_msg"] = EMAIL_BANNER_MSG
+        template_data["email_banner_msg_color"] = EMAIL_BANNER_MSG_COLOR
 
     if not event["armed"]:
-        template_data["UNARMED"] = True
+        template_data["unarmed"] = True
 
     if exempt_groups:
         template_data["exempt_groups"] = exempt_groups
@@ -492,27 +494,11 @@ def store_and_email_report(key_report_contents, event):
         ", ".join(event["exempt_groups"]) if event["exempt_groups"] else None
     )
 
-    template_data = admin_email_template_data(
-        EMAIL_ADMIN_REPORT_SUBJECT, key_report_contents, event, exempt_groups
-    )
+    template_data = admin_email_template_data(key_report_contents, event, exempt_groups)
 
     store_in_s3(event["account_number"], template_data)
 
     email_admin(event, template_data)
-
-
-def object_age(last_changed):
-    """Determine days since last change."""
-    # Handle as string
-    if isinstance(last_changed, str):
-        last_changed_date = dateutil.parser.parse(last_changed).date()
-    # Handle as native datetime
-    elif isinstance(last_changed, datetime.datetime):
-        last_changed_date = last_changed.date()
-    else:
-        return 0
-    age = datetime.date.today() - last_changed_date
-    return age.days
 
 
 def store_in_s3(account_number, template_data):
@@ -556,4 +542,18 @@ def send_email(template, template_data, email_targets):
         TemplateData=template_data,
     )
 
-    log.info("Success. Message ID: %s", response["MessageId"])
+    log.info("Email Sent Successfully. Message ID: %s", response["MessageId"])
+
+
+def object_age(last_changed):
+    """Determine days since last change."""
+    # Handle as string
+    if isinstance(last_changed, str):
+        last_changed_date = dateutil.parser.parse(last_changed).date()
+    # Handle as native datetime
+    elif isinstance(last_changed, datetime.datetime):
+        last_changed_date = last_changed.date()
+    else:
+        return 0
+    age = datetime.date.today() - last_changed_date
+    return age.days

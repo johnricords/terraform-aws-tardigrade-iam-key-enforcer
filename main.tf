@@ -179,14 +179,14 @@ module "scheduled_events" {
 
 resource "aws_ses_template" "user_template" {
   name    = "${var.project_name}-user"
-  subject = "{{subject}}"
-  html    = file("${path.module}/email_templates/user_email.html")
-  text    = file("${path.module}/email_templates/user_email.txt")
+  html    = var.email_templates.user.html
+  subject = var.email_templates.user.subject
+  text    = var.email_templates.user.text
 }
 
 resource "aws_ses_template" "admin_template" {
   name    = "${var.project_name}-admin"
-  subject = "{{subject}}"
-  html    = file("${path.module}/email_templates/admin_email.html")
-  text    = file("${path.module}/email_templates/admin_email.txt")
+  html    = var.email_templates.admin.html
+  subject = var.email_templates.admin.subject
+  text    = var.email_templates.admin.text
 }

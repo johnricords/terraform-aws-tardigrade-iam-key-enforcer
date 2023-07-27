@@ -51,6 +51,22 @@ variable "email_tag" {
   default     = "keyenforcer:email"
 }
 
+variable "email_templates" {
+  description = "Email templates to use for Admin and User emails"
+  type = object({
+    admin = object({
+      subject = string,
+      html    = string,
+      text    = string,
+    }),
+    user = object({
+      subject = string,
+      html    = string,
+      text    = string,
+    })
+  })
+}
+
 variable "admin_email" {
   description = "Admin Email that will receive all emails and reports about actions taken if email is enabled"
   type        = string

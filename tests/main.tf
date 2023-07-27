@@ -18,23 +18,6 @@ module "iam_key_enforcer" {
 
   project_name = local.project
 
-  assume_role_name = aws_iam_role.assume_role.name
-
-  log_level                  = "DEBUG"
-  email_admin_report_enabled = true
-  email_admin_report_subject = "Test IAM Key Enforcement Report"
-  email_source               = var.email_source
-  email_banner_message       = "IAM Key Enforcement will be armed on 07/01/2022"
-  email_banner_message_color = "red"
-  admin_email                = var.admin_email
-  key_age_warning            = var.key_age_warning
-  key_age_inactive           = var.key_age_inactive
-  key_age_delete             = var.key_age_delete
-  key_use_threshold          = var.key_use_threshold
-  s3_enabled                 = var.s3_enabled
-  s3_bucket                  = aws_s3_bucket.this.id
-  tags                       = local.tags
-
   accounts = [
     {
       account_name        = var.account_name
@@ -47,6 +30,32 @@ module "iam_key_enforcer" {
       schedule_expression = "rate(5 minutes)"
     }
   ]
+  assume_role_name           = aws_iam_role.assume_role.name
+  admin_email                = var.admin_email
+  email_admin_report_enabled = true
+  email_source               = var.email_source
+  email_banner_message       = "IAM Key Enforcement was armed on 07/01/2022"
+  email_banner_message_color = "red"
+  email_templates = {
+    admin = {
+      html    = file("${path.module}/email_templates/admin_email.html")
+      subject = file("${path.module}/email_templates/admin_email.txt")
+      text    = "Test IAM Key Enforcement Report"
+    }
+    user = {
+      html    = file("${path.module}/email_templates/user_email.html")
+      subject = "IAM User Key {{armed_state_msg}} for {{user_name}}"
+      text    = file("${path.module}/email_templates/user_email.txt")
+    }
+  }
+  key_age_delete    = var.key_age_delete
+  key_age_inactive  = var.key_age_inactive
+  key_use_threshold = var.key_use_threshold
+  key_age_warning   = var.key_age_warning
+  log_level         = "DEBUG"
+  s3_bucket         = aws_s3_bucket.this.id
+  s3_enabled        = var.s3_enabled
+  tags              = local.tags
 }
 
 resource "aws_s3_bucket" "this" {
