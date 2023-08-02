@@ -54,17 +54,19 @@ variable "email_tag" {
 variable "email_templates" {
   description = "Email templates to use for Admin and User emails"
   type = object({
-    admin = object({
-      subject = string,
-      html    = string,
-      text    = string,
-    }),
-    user = object({
-      subject = string,
-      html    = string,
-      text    = string,
-    })
+    admin = optional(object({
+      subject = optional(string, null),
+      html    = optional(string, null),
+      text    = optional(string, null),
+    }), {}),
+    user = optional(object({
+      subject = optional(string, null),
+      html    = optional(string, null),
+      text    = optional(string, null),
+    }), {})
   })
+
+  default = {}
 }
 
 variable "admin_email" {

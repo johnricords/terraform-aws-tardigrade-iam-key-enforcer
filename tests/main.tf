@@ -36,18 +36,15 @@ module "iam_key_enforcer" {
   email_source               = var.email_source
   email_banner_message       = "IAM Key Enforcement will be armed on 07/31/2023"
   email_banner_message_color = "red"
-  email_templates = {
-    admin = {
-      html    = file("${path.module}/email_templates/admin_email.html")
-      subject = "IAM Key Enforcement Report for {{account_number}}"
-      text    = file("${path.module}/email_templates/admin_email.txt")
-    }
-    user = {
-      html    = file("${path.module}/email_templates/user_email.html")
-      subject = "IAM User Key {{armed_state_msg}} for {{user_name}}"
-      text    = file("${path.module}/email_templates/user_email.txt")
-    }
-  }
+  # email_templates = {
+  #   # admin = {
+  #   #   subject = "IAM Key Enforcement Report for {{account_number}}"
+  #   #   html    = "HTML"
+  #   # }
+  #   # user = {
+  #   #   subject = "IAM User Key {{armed_state_msg}} for {{user_name}}"
+  #   # }
+  # }
   key_age_delete    = var.key_age_delete
   key_age_inactive  = var.key_age_inactive
   key_use_threshold = var.key_use_threshold

@@ -181,14 +181,14 @@ module "scheduled_events" {
 
 resource "aws_ses_template" "user_template" {
   name    = "${var.project_name}-user"
-  html    = var.email_templates.user.html
-  subject = var.email_templates.user.subject
-  text    = var.email_templates.user.text
+  html    = var.email_templates.user.html != null ? var.email_templates.user.html : file("${path.module}/email_templates/user_email.html")
+  subject = var.email_templates.user.subject != null ? var.email_templates.user.subject : "IAM User Key {{armed_state_msg}} for {{user_name}}"
+  text    = var.email_templates.user.text != null ? var.email_templates.user.text : file("${path.module}/email_templates/user_email.txt")
 }
 
 resource "aws_ses_template" "admin_template" {
   name    = "${var.project_name}-admin"
-  html    = var.email_templates.admin.html
-  subject = var.email_templates.admin.subject
-  text    = var.email_templates.admin.text
+  html    = var.email_templates.admin.html != null ? var.email_templates.admin.html : file("${path.module}/email_templates/admin_email.html")
+  subject = var.email_templates.admin.subject != null ? var.email_templates.admin.subject : "IAM Key Enforcement Report for {{account_number}}"
+  text    = var.email_templates.admin.text != null ? var.email_templates.admin.text : file("${path.module}/email_templates/admin_email.txt")
 }
