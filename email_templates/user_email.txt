@@ -1,0 +1,13 @@
+{{#if email_banner_msg}}
+{{email_banner_msg}}
+{{/if}}
+
+Expiring Access Key Report for {{user_name}}
+
+{{#if unarmed}}
+    The IAM Key Enforcer is not active and NO action has been taken on your key
+
+    The information below is for informational purposes and represents the results if the IAM Key Enforcer were active.
+{{/if}}
+
+The access key {{access_key_id}} is over {{key_age}} days old and has been {{action}}.
