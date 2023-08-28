@@ -36,7 +36,7 @@ data "aws_iam_policy_document" "lambda" {
 }
 
 module "lambda" {
-  source = "git::https://github.com/terraform-aws-modules/terraform-aws-lambda.git?ref=v5.2.0"
+  source = "git::https://github.com/terraform-aws-modules/terraform-aws-lambda.git?ref=v6.0.0"
 
   compatible_runtimes = var.compatible_python_runtimes
   description         = "Lambda function for Key Enforcement"
