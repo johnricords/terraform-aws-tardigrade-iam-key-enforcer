@@ -25,12 +25,6 @@ variable "project_name" {
   default     = "iam-key-enforcer"
 }
 
-variable "schedule_expression" {
-  description = "Schedule Expression for scheduled event"
-  type        = string
-  default     = "cron(0 0 * * 1 *)"
-}
-
 variable "input_transformer" {
   description = "Transform to apply on the event input"
   type = object({

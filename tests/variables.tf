@@ -18,7 +18,6 @@ variable "email_target" {
 variable "email_source" {
   description = "Email to send reports from"
   type        = string
-  default     = "communications@dicelab.net"
 }
 
 variable "admin_email" {

@@ -38,11 +38,10 @@ data "aws_iam_policy_document" "lambda" {
 module "lambda" {
   source = "git::https://github.com/terraform-aws-modules/terraform-aws-lambda.git?ref=v7.2.1"
 
-  compatible_runtimes = var.compatible_python_runtimes
-  description         = "Lambda function for Key Enforcement"
-  function_name       = var.project_name
-  handler             = "iam_key_enforcer.lambda_handler"
-  tags                = var.tags
+  description   = "Lambda function for Key Enforcement"
+  function_name = var.project_name
+  handler       = "iam_key_enforcer.lambda_handler"
+  tags          = var.tags
 
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda.json
@@ -158,7 +157,6 @@ module "scheduled_events" {
   event_rule_description = "Scheduled Event that runs IAM Key Enforcer Lambda for account ${each.value.account_number} - ${each.value.account_name}"
   lambda_arn             = module.lambda.lambda_function_arn
   project_name           = var.project_name
-  schedule_expression    = var.schedule_expression != null ? var.schedule_expression : each.value.schedule_expression
   tags                   = var.tags
 
   dead_letter_config = {

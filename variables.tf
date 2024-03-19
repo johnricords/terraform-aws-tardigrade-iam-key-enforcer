@@ -4,16 +4,9 @@ variable "project_name" {
   default     = "iam-key-enforcer"
 }
 
-variable "compatible_python_runtimes" {
-  description = "Compatible version of python to use defaults to 3.8"
-  type        = list(string)
-  default     = ["python3.8"]
-}
-
 variable "assume_role_name" {
   description = "Name of the IAM role that the lambda will assume in the target account"
   type        = string
-  default     = "E_IAM_KEY_ENFORCER"
 }
 
 variable "email_admin_report_enabled" {
@@ -109,15 +102,14 @@ variable "s3_bucket" {
 variable "accounts" {
   description = "List of account objects to create events for"
   type = list(object({
-    account_name        = string
-    account_number      = string
-    role_name           = optional(string) # deprecated
-    armed               = bool
-    debug               = optional(bool, false)
-    email_user_enabled  = bool
-    email_targets       = list(string)
-    exempt_groups       = list(string)
-    schedule_expression = optional(string, "cron(0 1 ? * SUN *)")
+    account_name       = string
+    account_number     = string
+    role_name          = optional(string) # deprecated
+    armed              = bool
+    debug              = optional(bool, false)
+    email_user_enabled = bool
+    email_targets      = list(string)
+    exempt_groups      = list(string)
   }))
   default = []
 }
@@ -143,12 +135,6 @@ variable "lambda" {
     }), {})
   })
   default = {}
-}
-
-variable "schedule_expression" {
-  description = "(DEPRECATED) Schedule Expressions for Rules"
-  type        = string
-  default     = null
 }
 
 variable "log_level" {

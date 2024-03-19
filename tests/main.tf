@@ -20,14 +20,13 @@ module "iam_key_enforcer" {
 
   accounts = [
     {
-      account_name        = var.account_name
-      account_number      = data.aws_caller_identity.current.account_id
-      armed               = false
-      debug               = true
-      email_user_enabled  = true
-      email_targets       = [var.email_target]
-      exempt_groups       = var.exempt_groups
-      schedule_expression = "rate(10 minutes)"
+      account_name       = var.account_name
+      account_number     = data.aws_caller_identity.current.account_id
+      armed              = false
+      debug              = true
+      email_user_enabled = true
+      email_targets      = [var.email_target]
+      exempt_groups      = var.exempt_groups
     }
   ]
   assume_role_name           = aws_iam_role.assume_role.name
